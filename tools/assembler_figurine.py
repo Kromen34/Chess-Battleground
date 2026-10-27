@@ -9,8 +9,9 @@ mieux qu'une simple moyenne), puis convertie :
   - origine : centre du socle, au ras du sol.
 
 Usage (dépendances : numpy uniquement) :
-  python tools/assembler_figurine.py kit.json
-où kit.json décrit les pièces (voir tools/kits/*.json).
+  python tools/assembler_figurine.py tools/kits/<kit>.json [dossier_des_stl]
+où le .json décrit les pièces. "output" est relatif à la racine du dépôt ; le dossier
+des STL vient de "source", ou du 2e argument s'il est donné (autre PC, autre lecteur).
 """
 
 import json
@@ -190,10 +191,16 @@ def write_glb(path, parts):
         f.write(struct.pack("<II", len(blob), 0x004E4942) + bytes(blob))
 
 
-def main(kit_path):
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def main(kit_path, source=None):
     with open(kit_path, encoding="utf-8") as f:
         kit = json.load(f)
-    src = kit["source"]
+    src = source or kit["source"]
+    if not os.path.isdir(src):
+        sys.exit(f"Dossier des STL introuvable : {src}. "
+                 "Passe le bon dossier en 2e argument.")
     loaded = []
     for part in kit["parts"]:
         tris = load_stl(os.path.join(src, part["file"]))
@@ -216,7 +223,7 @@ def main(kit_path):
         pos = ((pos - center) * scale) @ axes.T
         out_parts.append((part["name"], part["material"], pos, vertex_normals(pos, faces), faces))
         total += len(faces)
-    out = kit["output"]
+    out = os.path.join(REPO_ROOT, kit["output"])
     os.makedirs(os.path.dirname(out), exist_ok=True)
     write_glb(out, out_parts)
     allpos = np.concatenate([p[2] for p in out_parts])
@@ -225,4 +232,4 @@ def main(kit_path):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    main(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else None)
