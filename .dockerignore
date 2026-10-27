@@ -1,0 +1,14 @@
+# Contexte de l'image serveur (deploy/Dockerfile) : seulement ce dont le serveur a besoin.
+.git
+.godot
+.claude
+tools/bin
+build
+export
+# GodotSteam : inutile côté serveur (et ses binaires LFS ne sont pas dans git archive).
+addons
+assets
+tests
+docs
+*.md
+deploy/secrets
