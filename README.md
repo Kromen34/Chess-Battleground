@@ -11,11 +11,12 @@ dépend du nombre de joueurs.
 git clone https://github.com/Kromen34/TD-Battleground.git
 cd TD-Battleground
 git lfs install && git lfs pull
-./tests.sh          # Linux/macOS : télécharge Godot dans tools/bin/ puis lance les tests
+./tests.sh          # télécharge Godot dans tools/bin/ si besoin, puis lance les tests
 ```
 
-Sur Windows : installer Godot 4.3, puis `set GODOT=C:\chemin\vers\godot.exe` et
-`bash tests.sh` (Git Bash), ou ouvrir le projet dans l'éditeur et lancer `scenes/main.tscn`.
+Le téléchargement automatique marche sous Linux et sous Windows (lancer `bash tests.sh`
+depuis Git Bash). Ailleurs, ou pour utiliser un Godot déjà installé, passer son chemin
+via la variable `GODOT`. Pour jouer : ouvrir le projet dans l'éditeur et lancer `scenes/main.tscn`.
 
 ## État actuel
 

@@ -14,6 +14,8 @@ court et à jour : si tu changes une convention, mets-la à jour ici.
 ./tests.sh            # télécharge Godot dans tools/bin/ si besoin, puis lance la suite
 ```
 
+Le téléchargement auto gère Linux et Windows (Git Bash). Sinon : `GODOT=/chemin/vers/godot ./tests.sh`.
+
 Les tests tournent en headless (`godot --headless -s tests/run_tests.gd`), sans
 rendu. Tout ce qui est dans `src/core/` doit être testable ainsi.
 
