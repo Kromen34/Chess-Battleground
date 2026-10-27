@@ -32,6 +32,9 @@ src/core/         Logique pure (RefCounted / Resource) — ZÉRO nœud 3D, zéro
 src/net/          Réseau (GodotSteam P2P / ENet). Le serveur applique Rules, les clients affichent.
 src/ai/           IA PvE. Un joueur comme un autre : reçoit un GameState, renvoie une Action.
 src/view/         Rendu 3D : lit le GameState, ne le modifie jamais directement.
+src/ui/           Menus et écrans 2D (main_menu.gd = scène de démarrage)
+src/platform/     steam_service.gd : autoload SteamService (init Steam, pseudo, avatar)
+addons/godotsteam GodotSteam 4.15 GDExtension (dernière version compatible Godot 4.3), binaires en LFS
 scenes/           Scènes .tscn
 assets/           models/ (GLB), textures/, audio/ — tout en Git LFS
 tests/            run_tests.gd (runner) + test_*.gd
@@ -52,6 +55,15 @@ tools/            scripts utilitaires (get_godot.sh, conversion d'assets)
    C'est ce qui transite sur le réseau et ce que l'IA produit.
 5. **Déterminisme.** Tout aléa (dégâts, etc.) passe par un `RandomNumberGenerator` seedé
    dans `GameState`, jamais par `randi()` global. Sinon le replay et la synchro cassent.
+
+## Steam
+
+- Ne jamais référencer la classe `Steam` directement : passer par `SteamService`, qui utilise
+  `Engine.get_singleton("Steam")`. Le jeu et les tests doivent tourner sans Steam ni plugin
+  (profil par défaut « Joueur »). En headless, SteamService n'initialise pas Steam.
+- AppID provisoire : 480 (Spacewar, app de test de Valve), réglage `steam/initialization/app_id`
+  dans `project.godot`. GodotSteam 4.15 : `steamInitEx()` sans argument, et `run_callbacks()`
+  appelé à chaque frame par SteamService.
 
 ## Conventions GDScript
 
