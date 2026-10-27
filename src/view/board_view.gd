@@ -3,13 +3,21 @@ extends Node3D
 ## Rendu 3D du plateau et des figurines. Lit le GameState, ne le modifie jamais :
 ## toute action passe par le GameController qui appelle Rules.
 ##
-## Placeholder volontaire : des cubes pour les cases, des cylindres colorés pour
-## les unités. Quand les GLB seront là, UnitType.model_path remplacera le cylindre.
+## Cases en dalles de pierre (basalte / grès) ; le décor autour est construit par
+## BattlegroundDecor. Les unités restent des cylindres colorés : quand les GLB seront
+## là, UnitType.model_path remplacera le cylindre.
 
 signal cell_clicked(cell_id: StringName)
 signal unit_clicked(unit_id: int)
+## Émis après construction du plateau, avec l'AABB couvrant toutes les cases
+## (le décor se construit autour).
+signal board_built(bounds: AABB)
 
 const CELL_HEIGHT := 0.1
+const DARK_TILE := Color(0.2, 0.18, 0.17)
+const LIGHT_TILE := Color(0.58, 0.54, 0.47)
+## Graine fixe : les variations de teinte des dalles sont identiques à chaque partie.
+const TILE_SEED := 8
 const PLAYER_COLORS: Array[Color] = [
 	Color(0.25, 0.55, 0.95),  # J0 bleu
 	Color(0.9, 0.3, 0.3),     # J1 rouge
@@ -32,6 +40,18 @@ func bind(p_state: GameState) -> void:
 	state.unit_moved.connect(_on_unit_moved)
 	state.unit_died.connect(_on_unit_died)
 	state.unit_attacked.connect(_on_unit_attacked)
+	board_built.emit(board_bounds())
+
+
+## AABB couvrant toutes les cases du plateau.
+func board_bounds() -> AABB:
+	var box := AABB()
+	var first := true
+	for cell in state.board.get_cells():
+		var c := AABB(cell.world_position - Vector3(0.5, CELL_HEIGHT * 0.5, 0.5), Vector3(1.0, CELL_HEIGHT, 1.0))
+		box = c if first else box.merge(c)
+		first = false
+	return box
 
 
 func _build_cells() -> void:
@@ -40,12 +60,25 @@ func _build_cells() -> void:
 	_cell_nodes.clear()
 	_base_mats.clear()
 	_highlight_mat = StandardMaterial3D.new()
-	_highlight_mat.albedo_color = Color(0.4, 0.9, 0.5)
+	_highlight_mat.albedo_color = Color(0.3, 0.75, 0.4)
+	_highlight_mat.emission_enabled = true
+	_highlight_mat.emission = Color(0.25, 0.9, 0.4)
+	_highlight_mat.emission_energy_multiplier = 0.8
+	_highlight_mat.roughness = 0.6
 
-	var dark := StandardMaterial3D.new()
-	dark.albedo_color = Color(0.22, 0.2, 0.18)
-	var light := StandardMaterial3D.new()
-	light.albedo_color = Color(0.85, 0.8, 0.7)
+	# Grain de la pierre : bruit en triplanar, chaque dalle a donc un motif différent.
+	var noise := FastNoiseLite.new()
+	noise.frequency = 0.03
+	noise.fractal_octaves = 5
+	var grain_ramp := Gradient.new()
+	grain_ramp.set_color(0, Color(0.72, 0.72, 0.72))
+	grain_ramp.set_color(1, Color(1, 1, 1))
+	var grain := NoiseTexture2D.new()
+	grain.seamless = true
+	grain.noise = noise
+	grain.color_ramp = grain_ramp
+	var rng := RandomNumberGenerator.new()
+	rng.seed = TILE_SEED
 
 	for cell in state.board.get_cells():
 		var body := StaticBody3D.new()
@@ -55,7 +88,14 @@ func _build_cells() -> void:
 		var box := BoxMesh.new()
 		box.size = Vector3(0.96, CELL_HEIGHT, 0.96)
 		mesh.mesh = box
-		var mat := dark if cell.has_tag("dark") else light
+		var mat := StandardMaterial3D.new()
+		var base := DARK_TILE if cell.has_tag("dark") else LIGHT_TILE
+		mat.albedo_color = base.lightened(rng.randf_range(-0.06, 0.06)) if rng.randf() < 0.5 else base.darkened(rng.randf_range(0.0, 0.1))
+		mat.albedo_texture = grain
+		mat.uv1_triplanar = true
+		mat.uv1_scale = Vector3(0.6, 0.6, 0.6)
+		mat.uv1_offset = Vector3(rng.randf(), rng.randf(), rng.randf())
+		mat.roughness = 0.8 if cell.has_tag("dark") else 0.9
 		mesh.material_override = mat
 		_base_mats[cell.id] = mat
 		body.add_child(mesh)
