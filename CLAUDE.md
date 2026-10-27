@@ -34,6 +34,16 @@ court et à jour : si tu changes une convention, mets-la à jour ici.
 **Prochaines pistes (au choix de Nicolas) :** autres kits de dragons (B, C, D), système de
 cartes/deck, factions et stats, dés de mouvement, compteurs sur la table.
 
+**Prévu en priorité (demandé par Nicolas) :** les dragons manquent de détails (~100k triangles
+sur 2,4 M, clustering grossier qui écrase écailles, dents, griffes). À faire, puis comparer
+avant / après sur la même capture : (1) monter à ~300-400k triangles par figurine, Godot
+génère les LOD à l'import ; (2) meilleure simplification par fusion d'arêtes (Blender ou
+bibliothèque Python : leur téléchargement a été bloqué par le mode auto, demander à Nicolas
+d'autoriser) ; (3) « lavis » : assombrir les creux (cavité / occlusion calculée sur le
+modèle d'origine, en couleurs de sommets), comme une figurine peinte.
+À décider aussi : passer le dépôt en privé pour versionner les modèles (LFS), mail de
+demande de licence jeu vidéo à Artisan Guild.
+
 **Mettre en route un nouveau PC :**
 1. `git clone https://github.com/Kromen34/Chess-Battleground.git` puis `git lfs install && git lfs pull`
    (sinon les DLL de GodotSteam sont des pointeurs LFS et Steam ne marche pas).
