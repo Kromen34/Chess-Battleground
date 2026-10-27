@@ -8,7 +8,7 @@ dépend du nombre de joueurs.
 ## Démarrer
 
 ```sh
-git clone git@github.com:Kromen34/TD-Battleground.git
+git clone https://github.com/Kromen34/TD-Battleground.git
 cd TD-Battleground
 git lfs install && git lfs pull
 ./tests.sh          # Linux/macOS : télécharge Godot dans tools/bin/ puis lance les tests
