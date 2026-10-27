@@ -1,0 +1,11 @@
+{
+  "source": "I:/Mon Drive/3D/Miniatures/Artisan guild/myairbridge-50 Draconian Scourge - June 2023 AG/50 Draconian Scourge - June 2023 AG/Assalut Dragons & Dragonraiders/Assalut Dragon & Dragonrider A",
+  "output": "C:/Chess-Battleground/assets/models/draconian/dragon_a_wild.glb",
+  "parts": [
+    {"name": "base", "file": "Base_Dragon_A.stl", "material": "base", "triangles": 4000},
+    {"name": "body", "file": "Kit II (Wild Dragon)/Assault_Dragon_A.stl", "material": "scales", "triangles": 34000},
+    {"name": "head", "file": "Kit II (Wild Dragon)/Dragon_A_Head.stl", "material": "scales", "triangles": 16000},
+    {"name": "wing_l", "file": "Dragon_A_Wing_L (Fixed).stl", "material": "wings", "triangles": 22000},
+    {"name": "wing_r", "file": "Dragon_A_Wing_R (Fixed).stl", "material": "wings", "triangles": 22000}
+  ]
+}

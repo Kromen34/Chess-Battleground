@@ -119,24 +119,39 @@ func _build_units() -> void:
 func _spawn_unit_node(u: Unit) -> void:
 	var root := Node3D.new()
 	root.name = "Unit_%d" % u.id
+	var team_color := PLAYER_COLORS[u.owner % PLAYER_COLORS.size()]
+	var model := _load_model(u.type.model_path)
+	var height: float
+	if model != null:
+		# Les modèles regardent vers -Z : le joueur 0 (côté +z) fait face à l'adversaire,
+		# le joueur 1 est retourné.
+		model.rotation.y = 0.0 if u.owner == 0 else PI
+		model.position.y = CELL_HEIGHT * 0.5
+		_tint_base(model, team_color)
+		root.add_child(model)
+		height = _model_height(model)
+	else:
+		var mesh := MeshInstance3D.new()
+		var cyl := CylinderMesh.new()
+		cyl.top_radius = 0.25
+		cyl.bottom_radius = 0.3
+		cyl.height = 0.6 + 0.1 * u.type.max_hp / 4.0
+		mesh.mesh = cyl
+		mesh.position.y = cyl.height * 0.5 + CELL_HEIGHT * 0.5
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = team_color
+		mesh.material_override = mat
+		root.add_child(mesh)
+		height = cyl.height
+
+	# Zone cliquable : un cylindre invisible sur la case, quel que soit le visuel.
 	var body := Area3D.new()
-	var mesh := MeshInstance3D.new()
-	var cyl := CylinderMesh.new()
-	cyl.top_radius = 0.25
-	cyl.bottom_radius = 0.3
-	cyl.height = 0.6 + 0.1 * u.type.max_hp / 4.0
-	mesh.mesh = cyl
-	mesh.position.y = cyl.height * 0.5 + CELL_HEIGHT * 0.5
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = PLAYER_COLORS[u.owner % PLAYER_COLORS.size()]
-	mesh.material_override = mat
-	body.add_child(mesh)
 	var shape := CollisionShape3D.new()
 	var cs := CylinderShape3D.new()
-	cs.radius = 0.3
-	cs.height = cyl.height
+	cs.radius = 0.4
+	cs.height = minf(height, 1.6)
 	shape.shape = cs
-	shape.position.y = mesh.position.y
+	shape.position.y = cs.height * 0.5 + CELL_HEIGHT * 0.5
 	body.add_child(shape)
 	body.input_event.connect(_on_unit_input.bind(u.id))
 	root.add_child(body)
@@ -146,12 +161,41 @@ func _spawn_unit_node(u: Unit) -> void:
 	label.font_size = 48
 	label.pixel_size = 0.004
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	label.position.y = cyl.height + 0.35
+	label.position.y = height + 0.35
 	root.add_child(label)
 
 	root.position = state.board.get_cell(u.cell_id).world_position
 	add_child(root)
 	_unit_nodes[u.id] = root
+
+
+## Instancie le modèle 3D d'une figurine, ou null s'il n'y en a pas (ou si le fichier
+## manque, par exemple des figurines sous licence absentes du dépôt).
+func _load_model(path: String) -> Node3D:
+	if path == "" or not ResourceLoader.exists(path):
+		return null
+	var scene := load(path) as PackedScene
+	return scene.instantiate() as Node3D if scene != null else null
+
+
+## Le socle du modèle (nœud "base") prend la couleur de l'équipe.
+func _tint_base(model: Node3D, color: Color) -> void:
+	var base := model.find_child("base", true, false) as MeshInstance3D
+	if base == null:
+		return
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = color.darkened(0.25)
+	mat.roughness = 0.6
+	mat.metallic = 0.3
+	base.material_override = mat
+
+
+func _model_height(model: Node3D) -> float:
+	var top := 0.0
+	for mi in model.find_children("*", "MeshInstance3D", true, false):
+		var box: AABB = (mi as MeshInstance3D).get_aabb()
+		top = maxf(top, box.end.y)
+	return top
 
 
 func highlight_cells(cell_ids: Array) -> void:

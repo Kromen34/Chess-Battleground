@@ -18,3 +18,7 @@ tools/bin/
 
 # Claude Code local state
 .claude/settings.local.json
+
+# Figurines Artisan Guild : jamais dans git (dépôt public) tant que la licence
+# jeu vidéo n'est pas confirmée par écrit.
+assets/models/draconian/
