@@ -4,6 +4,8 @@ extends Node3D
 ## En réseau, ce nœud sera remplacé par un client qui envoie les actions au serveur ;
 ## la vue et le core ne changent pas.
 
+const MENU_SCENE := "res://scenes/main_menu.tscn"
+
 @export var player_kinds: PackedStringArray = PackedStringArray(["human", "ai"])
 @export var seed_value: int = 0
 
@@ -60,6 +62,11 @@ func _on_cell_clicked(cell_id: StringName) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		get_tree().change_scene_to_file(MENU_SCENE)
+		return
+	if state == null:
+		return
 	if event.is_action_pressed("ui_accept") and not _is_ai_turn() and not state.is_over():
 		selected_unit = null
 		_submit(Actions.end_turn())
@@ -97,4 +104,4 @@ func _refresh_hud() -> void:
 	if state.is_over():
 		return
 	var kind: String = state.player_kinds[state.current_player]
-	hud.text = "Tour %d — Joueur %d (%s)\nClic figurine : sélectionner · clic case : déplacer · clic ennemi : attaquer · Entrée : fin de tour" % [state.turn_number, state.current_player, kind]
+	hud.text = "Tour %d — Joueur %d (%s)\nClic figurine : sélectionner · clic case : déplacer · clic ennemi : attaquer · Entrée : fin de tour · Échap : menu" % [state.turn_number, state.current_player, kind]
