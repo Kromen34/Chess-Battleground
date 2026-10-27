@@ -21,10 +21,10 @@ court et à jour : si tu changes une convention, mets-la à jour ici.
 - `tests.sh` : télécharge Godot sous Windows aussi ; premier import GodotSteam débloqué.
 - Serveur dédié (branche `feat/serveur-dedie`) : partie contre l'IA jouée entièrement côté
   serveur, client en ENet, bouton « Jouer contre l'IA (serveur) ». 48 tests verts.
-  VPS OVH (VPS-1, Ubuntu 26.04) pris par Nicolas pour l'héberger.
+- VPS OVH en service (voir « Serveur dédié ») : serveur + PostgreSQL en Docker, le bouton
+  « Jouer contre l'IA (serveur) » s'y connecte.
 
-**Prochaines étapes du serveur :** Docker + déploiement sur le VPS, authentification par
-ticket de session Steam, PostgreSQL (joueurs, decks, points), stats des figurines servies
+**Prochaines étapes du serveur :** authentification par ticket de session Steam, PostgreSQL (joueurs, decks, points), stats des figurines servies
 par le serveur.
 
 **Prochaines pistes (au choix de Nicolas) :** système de cartes/deck, factions et stats,
@@ -104,13 +104,28 @@ tools/            scripts utilitaires (get_godot.sh, lancer_serveur.bat, convers
 - Le client ne reçoit que `GameState.to_view_dict(player)` : jamais la graine ni l'état du
   RNG (il prédirait les dés). La main et le deck adverses y seront aussi cachés.
 - Dés et tirages : uniquement côté serveur, via le RNG seedé du GameState.
-- Lancer en local : `tools\lancer_serveur.bat`, puis menu > « Jouer contre l'IA (serveur) ».
-  Autre serveur : lancer le jeu avec `-- --server=hôte:port`. Port par défaut : 7777 (UDP).
+- Le menu rejoint le VPS par défaut. Serveur local : `tools\lancer_serveur.bat`, puis lancer
+  le jeu avec `-- --server=127.0.0.1`. Port par défaut : 7777 (UDP).
 - Changement incompatible du protocole : incrémenter `Protocol.VERSION`.
 - BDD (PostgreSQL) côté serveur uniquement, jamais accessible par le client.
 - Infra : d'abord un VPS OVH avec Docker Compose (serveur Godot headless qui gère N parties
   + PostgreSQL). Kubernetes/Agones seulement si la charge le justifie : le serveur ne garde
   en mémoire que les parties en cours, pour pouvoir passer à plusieurs instances.
+
+## VPS (production)
+
+- OVH VPS-1, Ubuntu 26.04, IP `51.91.97.41`. Accès : `ssh chessbg` (alias dans `~/.ssh/config`,
+  clé `~/.ssh/id_ed25519_chessbg` à recréer et autoriser sur un nouveau PC). Secours : console
+  KVM du manager OVH avec le mot de passe de `ubuntu`.
+- Sécurité : SSH par clé uniquement, root interdit, ufw (22/tcp + 7777/udp seulement),
+  fail2ban, mises à jour de sécurité automatiques (sans redémarrage auto).
+- Déployer : `bash tools/deployer_serveur.sh` (envoie le commit HEAD, reconstruit l'image,
+  relance). Stack dans `deploy/` : conteneur de jeu en lecture seule et sans privilèges,
+  PostgreSQL sans port publié. Logs : `ssh chessbg 'cd /opt/chessbg/src/deploy && docker compose logs -f game'`.
+- Sur le VPS : `/opt/chessbg/src` (code déployé, écrasé à chaque déploiement),
+  `/opt/chessbg/secrets` (mot de passe BDD), `/opt/chessbg/backups` (dump quotidien 04:30,
+  14 jours). Pas encore de copie des sauvegardes hors du VPS.
+- Docker contourne ufw pour les ports publiés : ne publier que 7777/udp.
 
 ## Steam
 

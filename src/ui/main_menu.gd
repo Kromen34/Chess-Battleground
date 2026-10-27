@@ -2,9 +2,9 @@ extends Control
 ## Écran principal : titre, boutons, et profil Steam (pseudo + avatar) en haut à droite.
 
 const GAME_SCENE := "res://scenes/main.tscn"
-## Serveur rejoint par « Jouer contre l'IA (serveur) ». Surchargeable au lancement :
-##   godot --path . -- --server=mon.serveur.fr:7777
-const DEFAULT_SERVER_HOST := "127.0.0.1"
+## Serveur rejoint par « Jouer contre l'IA (serveur) » : le VPS OVH. Pour un serveur
+## local (tools/lancer_serveur.bat) : godot --path . -- --server=127.0.0.1
+const DEFAULT_SERVER_HOST := "51.91.97.41"
 
 @onready var profile_name: Label = %ProfileName
 @onready var profile_avatar: TextureRect = %ProfileAvatar
