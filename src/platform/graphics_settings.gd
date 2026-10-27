@@ -240,7 +240,8 @@ func _apply_rendering() -> void:
 	var vp := get_tree().root
 	vp.msaa_3d = int(values.msaa) as Viewport.MSAA
 	vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_FXAA if values.fxaa else Viewport.SCREEN_SPACE_AA_DISABLED
-	vp.use_taa = values.taa
+	# FSR 2.2 fait déjà son propre anticrénelage temporel : Godot refuse le TAA avec.
+	vp.use_taa = values.taa and values.upscaling != "fsr2"
 	vp.use_debanding = values.debanding
 	vp.scaling_3d_mode = _UPSCALING[values.upscaling]
 	vp.scaling_3d_scale = float(values.render_scale)
