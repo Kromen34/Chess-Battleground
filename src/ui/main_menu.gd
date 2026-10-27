@@ -2,15 +2,18 @@ extends Control
 ## Écran principal : titre, boutons, et profil Steam (pseudo + avatar) en haut à droite.
 
 const GAME_SCENE := "res://scenes/main.tscn"
+const OPTIONS_SCENE := "res://scenes/options_menu.tscn"
 
 @onready var profile_name: Label = %ProfileName
 @onready var profile_avatar: TextureRect = %ProfileAvatar
 @onready var play_button: Button = %PlayButton
+@onready var options_button: Button = %OptionsButton
 @onready var quit_button: Button = %QuitButton
 
 
 func _ready() -> void:
 	play_button.pressed.connect(_on_play_pressed)
+	options_button.pressed.connect(func() -> void: get_tree().change_scene_to_file(OPTIONS_SCENE))
 	quit_button.pressed.connect(func() -> void: get_tree().quit())
 	SteamService.profile_changed.connect(_refresh_profile)
 	_refresh_profile()

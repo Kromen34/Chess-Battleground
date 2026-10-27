@@ -204,13 +204,15 @@ func highlight_cells(cell_ids: Array) -> void:
 		mesh.material_override = _highlight_mat if cell_ids.has(id) else _base_mats[id]
 
 
+## Clic au relâchement du bouton : un glisser de caméra (CameraRig) avale le
+## relâchement, et ne sélectionne donc rien.
 func _on_cell_input(_camera: Node, event: InputEvent, _pos: Vector3, _normal: Vector3, _idx: int, cell_id: StringName) -> void:
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+	if event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		cell_clicked.emit(cell_id)
 
 
 func _on_unit_input(_camera: Node, event: InputEvent, _pos: Vector3, _normal: Vector3, _idx: int, unit_id: int) -> void:
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+	if event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		unit_clicked.emit(unit_id)
 
 
