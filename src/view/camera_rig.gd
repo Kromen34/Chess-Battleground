@@ -3,7 +3,8 @@ extends Node3D
 ## Caméra orbitale autour d'un point visé (la position de ce nœud) :
 ## - molette : zoom avant / arrière ;
 ## - clic droit enfoncé, souris gauche / droite : tourne autour du point visé ;
-## - clic gauche enfoncé, souris haut / bas : avance / recule sur la table.
+## - clic gauche enfoncé, souris haut / bas : avance / recule sur la table ;
+## - clic molette : revient à la vue de départ.
 ## Plus on zoome, plus la caméra s'abaisse pour voir les figurines de profil.
 ## Un clic gauche sans glisser reste un clic de jeu : la vue réagit au relâchement,
 ## et on avale ce relâchement quand la souris a glissé (voir DRAG_THRESHOLD).
@@ -31,11 +32,16 @@ var _target_distance: float
 var _target_position: Vector3
 var _left_travel: float = 0.0
 var _left_dragging: bool = false
+## Vue de départ, rétablie par le clic molette.
+var _home_distance: float
+var _home_position: Vector3
 
 
 func _ready() -> void:
 	_target_distance = distance
 	_target_position = position
+	_home_distance = distance
+	_home_position = position
 	_apply()
 
 
@@ -46,6 +52,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_target_distance = maxf(min_distance, _target_distance * 0.88)
 		elif mb.pressed and mb.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			_target_distance = minf(max_distance, _target_distance / 0.88)
+		elif mb.pressed and mb.button_index == MOUSE_BUTTON_MIDDLE:
+			reset_view()
 		elif mb.button_index == MOUSE_BUTTON_LEFT:
 			if not mb.pressed and _left_dragging:
 				# Fin d'un glisser : ce relâchement n'est pas un clic sur le plateau.
@@ -67,6 +75,15 @@ func _unhandled_input(event: InputEvent) -> void:
 				_target_position.x = clampf(_target_position.x, -move_limit.x, move_limit.x)
 				_target_position.z = clampf(_target_position.z, -move_limit.y, move_limit.y)
 				get_viewport().set_input_as_handled()
+
+
+## Revient en douceur à la vue de départ.
+func reset_view() -> void:
+	_target_distance = _home_distance
+	_target_position = _home_position
+	# Repart vers l'angle de départ par le chemin le plus court.
+	_target_yaw = 0.0
+	_yaw = wrapf(_yaw, -PI, PI)
 
 
 func _process(delta: float) -> void:
