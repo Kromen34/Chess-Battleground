@@ -100,6 +100,16 @@ func to_dict() -> Dictionary:
 	}
 
 
+## Vue de la partie envoyée au client [param player] par le serveur.
+## Retire tout ce qu'un client ne doit pas connaître : la graine et l'état du RNG
+## (sinon il prédit les dés). C'est ici qu'on cachera aussi la main et le deck adverses.
+func to_view_dict(_player: int) -> Dictionary:
+	var d := to_dict()
+	d.erase("seed")
+	d.erase("rng_state")
+	return d
+
+
 static func from_dict(d: Dictionary, p_board: Board) -> GameState:
 	var s := GameState.new(p_board, int(d["player_count"]), int(d.get("seed", 0)))
 	s.rng.state = int(d.get("rng_state", s.rng.state))
