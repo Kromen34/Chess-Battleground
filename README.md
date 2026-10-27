@@ -2,8 +2,7 @@
 
 Jeu de plateau tactique en 3D, tour par tour. Godot 4.3 · GDScript · Steam.
 
-1v1 (PvP ou PvE), et 2v1 / 3v1 / 4v1 contre une IA sur des plateaux dont la forme
-dépend du nombre de joueurs.
+1v1 (PvP ou PvE) sur un plateau 8×8, avec une zone de spawn de 8×2 par joueur.
 
 ## Démarrer
 
