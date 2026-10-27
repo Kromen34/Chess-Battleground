@@ -14,6 +14,7 @@ config/icon="res://icon.svg"
 [autoload]
 
 SteamService="*res://src/platform/steam_service.gd"
+GraphicsSettings="*res://src/platform/graphics_settings.gd"
 
 [steam]
 
