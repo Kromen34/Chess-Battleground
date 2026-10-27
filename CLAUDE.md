@@ -19,9 +19,16 @@ court et à jour : si tu changes une convention, mets-la à jour ici.
   « Quitter », pseudo + avatar Steam en haut à droite (validé : ça marche). Échap en partie → menu.
 - Projet renommé **Chess Battleground** (ex-TD Battleground), dépôt `Kromen34/Chess-Battleground`.
 - `tests.sh` : télécharge Godot sous Windows aussi ; premier import GodotSteam débloqué.
+- Serveur dédié (branche `feat/serveur-dedie`) : partie contre l'IA jouée entièrement côté
+  serveur, client en ENet, bouton « Jouer contre l'IA (serveur) ». 48 tests verts.
+  VPS OVH (VPS-1, Ubuntu 26.04) pris par Nicolas pour l'héberger.
 
-**Prochaines pistes (au choix de Nicolas) :** liste finale des figurines et stats, réseau
-(GodotSteam P2P), menus suivants (options, multijoueur).
+**Prochaines étapes du serveur :** Docker + déploiement sur le VPS, authentification par
+ticket de session Steam, PostgreSQL (joueurs, decks, points), stats des figurines servies
+par le serveur.
+
+**Prochaines pistes (au choix de Nicolas) :** système de cartes/deck, factions et stats,
+dés de mouvement, menus suivants (options, multijoueur).
 
 **Mettre en route un nouveau PC :**
 1. `git clone https://github.com/Kromen34/Chess-Battleground.git` puis `git lfs install && git lfs pull`
@@ -54,7 +61,13 @@ src/core/         Logique pure (RefCounted / Resource) — ZÉRO nœud 3D, zéro
   game_state.gd   État complet d'une partie : plateau, unités, tour, joueur actif
   rules.gd        Validation des actions (déplacement, attaque) — seule source de vérité
   actions.gd      Actions sérialisables (Dictionary) : Move, Attack, EndTurn
-src/net/          Réseau (GodotSteam P2P / ENet). Le serveur applique Rules, les clients affichent.
+src/net/          Serveur dédié et client réseau (voir « Serveur dédié »)
+  protocol.gd     Messages JSON client <-> serveur, nettoyage des actions reçues
+  match_server.gd Logique serveur sans transport (sessions, parties) — testable sans réseau
+  server_match.gd Une partie côté serveur : GameState de référence + IA, signaux -> événements
+  state_mirror.gd Côté client : applique les événements du serveur à la copie locale
+  net_server.gd / net_client.gd  Transport ENet (paquets bruts, pas de RPC)
+  server_main.gd  Point d'entrée de scenes/server.tscn
 src/ai/           IA PvE. Un joueur comme un autre : reçoit un GameState, renvoie une Action.
 src/view/         Rendu 3D : lit le GameState, ne le modifie jamais directement.
 src/ui/           Menus et écrans 2D (main_menu.gd = scène de démarrage)
@@ -63,7 +76,7 @@ addons/godotsteam GodotSteam 4.15 GDExtension (dernière version compatible Godo
 scenes/           Scènes .tscn
 assets/           models/ (GLB), textures/, audio/ — tout en Git LFS
 tests/            run_tests.gd (runner) + test_*.gd
-tools/            scripts utilitaires (get_godot.sh, conversion d'assets)
+tools/            scripts utilitaires (get_godot.sh, lancer_serveur.bat, conversion d'assets)
 ```
 
 ## Règles d'architecture (non négociables)
@@ -80,6 +93,24 @@ tools/            scripts utilitaires (get_godot.sh, conversion d'assets)
    C'est ce qui transite sur le réseau et ce que l'IA produit.
 5. **Déterminisme.** Tout aléa (dégâts, etc.) passe par un `RandomNumberGenerator` seedé
    dans `GameState`, jamais par `randi()` global. Sinon le replay et la synchro cassent.
+
+## Serveur dédié
+
+- **Anti-triche = serveur autoritaire**, pas la BDD : toute partie qui compte (PvP et contre
+  l'IA, qui rapporte des points) tourne sur le serveur. Le client envoie des actions et
+  affiche les événements renvoyés ; il ne recalcule jamais un résultat.
+- Le numéro de joueur vient de la session serveur, jamais du message. Toute action reçue
+  passe par `Protocol.sanitize_action` puis `Rules`.
+- Le client ne reçoit que `GameState.to_view_dict(player)` : jamais la graine ni l'état du
+  RNG (il prédirait les dés). La main et le deck adverses y seront aussi cachés.
+- Dés et tirages : uniquement côté serveur, via le RNG seedé du GameState.
+- Lancer en local : `tools\lancer_serveur.bat`, puis menu > « Jouer contre l'IA (serveur) ».
+  Autre serveur : lancer le jeu avec `-- --server=hôte:port`. Port par défaut : 7777 (UDP).
+- Changement incompatible du protocole : incrémenter `Protocol.VERSION`.
+- BDD (PostgreSQL) côté serveur uniquement, jamais accessible par le client.
+- Infra : d'abord un VPS OVH avec Docker Compose (serveur Godot headless qui gère N parties
+  + PostgreSQL). Kubernetes/Agones seulement si la charge le justifie : le serveur ne garde
+  en mémoire que les parties en cours, pour pouvoir passer à plusieurs instances.
 
 ## Steam
 
@@ -116,9 +147,14 @@ tools/            scripts utilitaires (get_godot.sh, conversion d'assets)
 
 - Pas de plateaux multijoueurs (2v1, 3v1…) : triangle et croix ont été essayés puis
   abandonnés (octobre 2026). Le jeu reste en 1v1 sur 8×8, spawn 8×2.
+- Serveur dédié autoritaire, transport ENet (octobre 2026). Le P2P GodotSteam est écarté
+  pour les parties qui comptent : l'hôte pourrait tricher.
+- Figurines jouées via un deck de cartes construit par le joueur ; chaque figurine a une
+  faction (elfes, nains, démons…) et des stats (attaque, défense) ; déplacement selon des
+  dés de mouvement. Le détail reste à définir avec Nicolas.
 
 ## Ce qui n'est pas encore décidé (ne pas inventer)
 
 - La liste finale des figurines et leurs stats (voir `src/core/units/data/` pour les
   valeurs provisoires de test).
-- Le transport réseau définitif (GodotSteam P2P prévu, ENet pour le dev local).
+- Les règles détaillées des cartes, du deck, des factions et des dés de mouvement.

@@ -71,6 +71,13 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 22
 text = "Jouer contre l'IA"
 
+[node name="OnlineButton" type="Button" parent="Center"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Jouer contre l'IA (serveur)"
+
 [node name="QuitButton" type="Button" parent="Center"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 52)

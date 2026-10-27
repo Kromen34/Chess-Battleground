@@ -2,15 +2,20 @@ extends Control
 ## Écran principal : titre, boutons, et profil Steam (pseudo + avatar) en haut à droite.
 
 const GAME_SCENE := "res://scenes/main.tscn"
+## Serveur rejoint par « Jouer contre l'IA (serveur) ». Surchargeable au lancement :
+##   godot --path . -- --server=mon.serveur.fr:7777
+const DEFAULT_SERVER_HOST := "127.0.0.1"
 
 @onready var profile_name: Label = %ProfileName
 @onready var profile_avatar: TextureRect = %ProfileAvatar
 @onready var play_button: Button = %PlayButton
+@onready var online_button: Button = %OnlineButton
 @onready var quit_button: Button = %QuitButton
 
 
 func _ready() -> void:
 	play_button.pressed.connect(_on_play_pressed)
+	online_button.pressed.connect(_on_online_pressed)
 	quit_button.pressed.connect(func() -> void: get_tree().quit())
 	SteamService.profile_changed.connect(_refresh_profile)
 	_refresh_profile()
@@ -25,4 +30,23 @@ func _refresh_profile() -> void:
 
 
 func _on_play_pressed() -> void:
+	GameController.online_host = ""
 	get_tree().change_scene_to_file(GAME_SCENE)
+
+
+func _on_online_pressed() -> void:
+	var address := server_address(OS.get_cmdline_user_args())
+	GameController.online_host = address[0]
+	GameController.online_port = address[1]
+	get_tree().change_scene_to_file(GAME_SCENE)
+
+
+## Lit --server=hôte[:port] dans les arguments. Retourne [hôte, port].
+static func server_address(args: PackedStringArray) -> Array:
+	for a in args:
+		if a.begins_with("--server="):
+			var parts := a.trim_prefix("--server=").split(":")
+			var port := parts[1].to_int() if parts.size() > 1 else Protocol.DEFAULT_PORT
+			if parts[0] != "" and port > 0 and port < 65536:
+				return [parts[0], port]
+	return [DEFAULT_SERVER_HOST, Protocol.DEFAULT_PORT]
