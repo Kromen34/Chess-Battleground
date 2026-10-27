@@ -21,8 +21,8 @@ func generate() -> Board:
 
 
 ## Fabrique : retourne le générateur adapté au nombre de joueurs.
-## Les formes 3, 4 et 5 joueurs ne sont pas encore validées — pour l'instant
-## elles renvoient null et les règles refusent de démarrer la partie.
+## Le jeu est en 1v1 uniquement : tout autre nombre de joueurs renvoie null
+## et les règles refusent de démarrer la partie.
 static func for_player_count(players: int) -> BoardGenerator:
 	match players:
 		2:

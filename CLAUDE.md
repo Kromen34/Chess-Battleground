@@ -1,9 +1,9 @@
 # TD Battleground — guide pour les sessions Claude Code
 
 Jeu de plateau tactique en 3D (Godot 4.3, GDScript), tour par tour, publié sur Steam.
-1v1 PvP ou PvE, et 2v1 / 3v1 / 4v1 contre une IA. Le plateau change de forme selon
-le nombre de joueurs : il est donc modélisé comme un **graphe de cases**, jamais
-comme une grille 8×8 en dur.
+1v1 uniquement (PvP ou PvE), sur un plateau 8×8 avec une zone de spawn de 8×2 par
+joueur. Le plateau reste modélisé comme un **graphe de cases**, jamais comme une
+grille 8×8 en dur (obstacles, variantes de plateau futures).
 
 Ce fichier est lu par chaque session Claude Code, sur chaque PC. Il doit rester
 court et à jour : si tu changes une convention, mets-la à jour ici.
@@ -75,9 +75,13 @@ tools/            scripts utilitaires (get_godot.sh, conversion d'assets)
   commiter un `.glb` sans que `git lfs ls-files` le liste.
 - Ne jamais commiter `.godot/`.
 
+## Décisions prises
+
+- Pas de plateaux multijoueurs (2v1, 3v1…) : triangle et croix ont été essayés puis
+  abandonnés (octobre 2026). Le jeu reste en 1v1 sur 8×8, spawn 8×2.
+
 ## Ce qui n'est pas encore décidé (ne pas inventer)
 
-- Les formes exactes des plateaux 3, 4 et 5 joueurs (Nicolas valide les formes).
 - La liste finale des figurines et leurs stats (voir `src/core/units/data/` pour les
   valeurs provisoires de test).
 - Le transport réseau définitif (GodotSteam P2P prévu, ENet pour le dev local).
