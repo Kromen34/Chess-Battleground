@@ -6,7 +6,7 @@ config_version=5
 
 [application]
 
-config/name="TD Battleground"
+config/name="Chess Battleground"
 run/main_scene="res://scenes/main_menu.tscn"
 config/features=PackedStringArray("4.3", "Forward Plus")
 config/icon="res://icon.svg"
