@@ -147,6 +147,8 @@ func _refresh() -> void:
 				(_value_labels[key] as Label).text = _format(s, float(v))
 	# La taille de fenêtre ne s'applique qu'en mode fenêtré.
 	(_controls["resolution"] as OptionButton).disabled = GraphicsSettings.values.window_mode != "windowed"
+	# FSR 2.2 inclut son propre anticrénelage temporel, incompatible avec le TAA.
+	(_controls["taa"] as CheckButton).disabled = GraphicsSettings.values.upscaling == "fsr2"
 	_refreshing = false
 
 
