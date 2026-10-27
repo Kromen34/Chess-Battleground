@@ -1,0 +1,49 @@
+[gd_scene load_steps=6 format=3 uid="uid://b0tdbattlemain"]
+
+[ext_resource type="Script" path="res://src/game_controller.gd" id="1_ctrl"]
+[ext_resource type="Script" path="res://src/view/board_view.gd" id="2_view"]
+
+[sub_resource type="ProceduralSkyMaterial" id="sky_mat"]
+sky_top_color = Color(0.25, 0.3, 0.4, 1)
+sky_horizon_color = Color(0.55, 0.55, 0.6, 1)
+ground_bottom_color = Color(0.1, 0.1, 0.12, 1)
+ground_horizon_color = Color(0.55, 0.55, 0.6, 1)
+
+[sub_resource type="Sky" id="sky"]
+sky_material = SubResource("sky_mat")
+
+[sub_resource type="Environment" id="Environment_main"]
+background_mode = 2
+sky = SubResource("sky")
+ambient_light_source = 3
+ambient_light_energy = 0.6
+tonemap_mode = 2
+
+[node name="Main" type="Node3D"]
+script = ExtResource("1_ctrl")
+player_kinds = PackedStringArray("human", "ai")
+
+[node name="BoardView" type="Node3D" parent="."]
+script = ExtResource("2_view")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.866025, 0, -0.866025, 0.5, 0, 9, 5.2)
+fov = 50.0
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.353553, 0.353553, 0, 0.707107, 0.707107, -0.5, -0.612372, 0.612372, 0, 6, 0)
+light_energy = 1.2
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_main")
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="Status" type="Label" parent="HUD"]
+offset_left = 16.0
+offset_top = 12.0
+offset_right = 900.0
+offset_bottom = 70.0
+theme_override_font_sizes/font_size = 18
+text = "..."

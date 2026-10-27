@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="UnitType" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/core/units/unit_type.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"soldier"
+display_name = "Soldat"
+max_hp = 8
+move_points = 2
+attack_points = 1
+damage = 3
+attack_range = 1
+move_directions = Array[StringName]([&"n", &"s", &"e", &"w"])
+can_jump = false
+model_path = ""

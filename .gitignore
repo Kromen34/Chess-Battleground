@@ -1,0 +1,20 @@
+# Godot 4
+.godot/
+.import/
+*.import.tmp
+export_presets.cfg.secret
+build/
+export/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# Godot binaries used for local headless tests (see tools/get_godot.sh)
+tools/bin/
+
+# Claude Code local state
+.claude/settings.local.json
