@@ -1,0 +1,52 @@
+# Stack du VPS : serveur de jeu + PostgreSQL. Déployée par tools/deployer_serveur.sh
+# dans /opt/chessbg/src ; les secrets et sauvegardes vivent hors de ce dossier
+# (/opt/chessbg/secrets, /opt/chessbg/backups) pour survivre aux déploiements.
+name: chessbg
+
+services:
+  game:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: chessbg-server:latest
+    restart: unless-stopped
+    ports:
+      - "7777:7777/udp"
+    # Le serveur n'écrit rien sur disque : conteneur en lecture seule, sans privilèges.
+    read_only: true
+    tmpfs:
+      - /home/godot:uid=10001,gid=10001
+      - /tmp
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 1g
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }
+
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    # Aucun port publié : la BDD n'est joignable que depuis les conteneurs de la stack.
+    environment:
+      POSTGRES_DB: chessbg
+      POSTGRES_USER: chessbg
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets: [db_password]
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chessbg -d chessbg"]
+      interval: 10s
+      retries: 5
+    mem_limit: 1g
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }
+
+secrets:
+  db_password:
+    file: /opt/chessbg/secrets/db_password.txt
+
+volumes:
+  db-data:
