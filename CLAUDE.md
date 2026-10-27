@@ -19,9 +19,20 @@ court et à jour : si tu changes une convention, mets-la à jour ici.
   « Quitter », pseudo + avatar Steam en haut à droite (validé : ça marche). Échap en partie → menu.
 - Projet renommé **Chess Battleground** (ex-TD Battleground), dépôt `Kromen34/Chess-Battleground`.
 - `tests.sh` : télécharge Godot sous Windows aussi ; premier import GodotSteam débloqué.
+- Serveur dédié + VPS OVH : branche `feat/serveur-dedie`, PR #6 (pas encore fusionnée).
+- Branche `feat/decor-plateau` (PR séparée, partie de `main`) :
+  - Décor « soirée jeu de rôle au salon » (`src/view/tabletop_decor.gd`) : plateau en bois
+    posé sur une table **laissée libre** (Nicolas y mettra compteurs, dés, cartes : ne pas
+    y ajouter d'accessoires), suspension, chaises, tapis, parquet, bibliothèque, fenêtre.
+    Le premier jet « champ de bataille » a été jugé moche et abandonné.
+  - Caméra (`src/view/camera_rig.gd`) : molette = zoom, clic droit enfoncé = rotation,
+    clic gauche enfoncé = avancer/reculer, clic molette = vue de départ. Les clics du
+    plateau sont pris au **relâchement** (un glisser de caméra avale le relâchement).
+  - Menu Options graphiques (`src/ui/options_menu.gd` + autoload `GraphicsSettings`).
+  - Premières figurines : dragons Artisan Guild (voir « Figurines »). 37 tests verts.
 
-**Prochaines pistes (au choix de Nicolas) :** liste finale des figurines et stats, réseau
-(GodotSteam P2P), menus suivants (options, multijoueur).
+**Prochaines pistes (au choix de Nicolas) :** autres kits de dragons (B, C, D), système de
+cartes/deck, factions et stats, dés de mouvement, compteurs sur la table.
 
 **Mettre en route un nouveau PC :**
 1. `git clone https://github.com/Kromen34/Chess-Battleground.git` puis `git lfs install && git lfs pull`
@@ -32,6 +43,31 @@ court et à jour : si tu changes une convention, mets-la à jour ici.
    PC sans carte graphique (Vulkan/D3D12 absents, ex. VM) : `tools\lancer_sans_gpu.bat`
    (`-e` pour l'éditeur). Godot 4.3 ne bascule pas seul en OpenGL (seulement à partir de 4.4).
 4. Sans `gh` : les PR se font via l'API GitHub avec le jeton de Git Credential Manager.
+5. Figurines (absentes de git, voir « Figurines ») : les regénérer depuis les STL du Google
+   Drive de Nicolas, pour chaque kit : `python tools/assembler_figurine.py tools/kits/<kit>.json`
+   (+ le dossier des STL en 2e argument si le Drive n'est pas sur `I:`). Sans elles, le jeu
+   affiche des cylindres à la place.
+6. Identité git : `git config user.name "Rips Nico"` et `git config user.email "kromen34@hotmail.com"`.
+
+## Figurines
+
+- Source : kits STL d'impression **Artisan Guild** (Draconian Scourge, juin 2023) sur le
+  Google Drive de Nicolas : `I:\Mon Drive\3D\Miniatures\Artisan guild\...`. Ne pas utiliser
+  les `.blend` / `.fbx` qui s'y trouvent (essais ratés de Nicolas).
+- **Licence** : le PDF fourni par Artisan Guild limite l'usage au personnel et interdit les
+  jeux ; Nicolas dit avoir des droits commerciaux. Tant qu'une licence couvrant le jeu vidéo
+  n'est pas confirmée par écrit, `assets/models/draconian/` reste dans `.gitignore` (le
+  dépôt est public : pousser les modèles = les distribuer). Ne jamais les commiter.
+- `tools/assembler_figurine.py` (numpy seul, pas de Blender) : les pièces d'un kit partagent
+  le même repère, on les fusionne telles quelles ; allègement par clustering de sommets à
+  quadriques (~100k triangles par figurine) ; socle = 0,85 case, figurine tournée vers -Z.
+  Un fichier par kit dans `tools/kits/` (pièces, matériau, triangles visés). Les membranes
+  fines (ailes) ont besoin de plus de triangles, sinon elles se trouent.
+- Matériaux : couleurs unies (un STL n'a pas de textures). Le nœud `base` du GLB prend la
+  couleur de l'équipe dans `BoardView`.
+- Test provisoire : Cavalier = Spear Dragonrider, Gardien = Wild Dragon (`model_path` des `.tres`).
+- Vérifier un modèle sans lancer le jeu : rendu sous 4 angles par un script `-s` qui
+  instancie le GLB et sauve `root.get_texture().get_image()` (le PC a une RTX 5080).
 
 ## Lancer les tests (à faire avant tout push)
 
@@ -57,13 +93,17 @@ src/core/         Logique pure (RefCounted / Resource) — ZÉRO nœud 3D, zéro
 src/net/          Réseau (GodotSteam P2P / ENet). Le serveur applique Rules, les clients affichent.
 src/ai/           IA PvE. Un joueur comme un autre : reçoit un GameState, renvoie une Action.
 src/view/         Rendu 3D : lit le GameState, ne le modifie jamais directement.
-src/ui/           Menus et écrans 2D (main_menu.gd = scène de démarrage)
+  board_view.gd   Cases, figurines (GLB ou cylindre), clics ; signal board_built(bounds)
+  tabletop_decor.gd  Table, pièce et lumière, construits autour du plateau
+  camera_rig.gd   Caméra orbitale (souris)
+src/ui/           Menus et écrans 2D (main_menu.gd = scène de démarrage, options_menu.gd)
 src/platform/     steam_service.gd : autoload SteamService (init Steam, pseudo, avatar)
+                  graphics_settings.gd : autoload GraphicsSettings (user://settings.cfg)
 addons/godotsteam GodotSteam 4.15 GDExtension (dernière version compatible Godot 4.3), binaires en LFS
 scenes/           Scènes .tscn
 assets/           models/ (GLB), textures/, audio/ — tout en Git LFS
 tests/            run_tests.gd (runner) + test_*.gd
-tools/            scripts utilitaires (get_godot.sh, conversion d'assets)
+tools/            get_godot.sh, assembler_figurine.py + kits/, lancer_sans_gpu.bat
 ```
 
 ## Règles d'architecture (non négociables)
@@ -116,6 +156,11 @@ tools/            scripts utilitaires (get_godot.sh, conversion d'assets)
 
 - Pas de plateaux multijoueurs (2v1, 3v1…) : triangle et croix ont été essayés puis
   abandonnés (octobre 2026). Le jeu reste en 1v1 sur 8×8, spawn 8×2.
+- Ambiance : le plateau est posé sur une table de salon, comme une partie de jeu de rôle
+  entre amis. Échelle : 1 case = 1 pouce (2,5 cm).
+- Réglages graphiques : décrits une seule fois dans `GraphicsSettings.SETTINGS` (le menu
+  se construit à partir de cette liste) ; un nouveau réglage s'ajoute là. FSR 2.2 de
+  Godot 4.3 émet une erreur bénigne à la fermeture et refuse le TAA : FSR 1.0 par défaut.
 
 ## Ce qui n'est pas encore décidé (ne pas inventer)
 
