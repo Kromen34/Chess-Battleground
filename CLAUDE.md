@@ -8,6 +8,31 @@ grille 8×8 en dur (obstacles, variantes de plateau futures).
 Ce fichier est lu par chaque session Claude Code, sur chaque PC. Il doit rester
 court et à jour : si tu changes une convention, mets-la à jour ici.
 
+## Où on en est (mis à jour le 27/10/2026)
+
+À relire en début de session : c'est la mémoire partagée entre les PC.
+
+**Fait :**
+- Cœur du jeu : plateau-graphe 8×8, 4 figurines provisoires, règles, IA de référence,
+  scène 3D placeholder (`scenes/main.tscn`). 32 tests verts.
+- Menu principal (`scenes/main_menu.tscn`, scène de démarrage) : « Jouer contre l'IA »,
+  « Quitter », pseudo + avatar Steam en haut à droite (validé : ça marche). Échap en partie → menu.
+- Projet renommé **Chess Battleground** (ex-TD Battleground), dépôt `Kromen34/Chess-Battleground`.
+- `tests.sh` : télécharge Godot sous Windows aussi ; premier import GodotSteam débloqué.
+
+**Prochaines pistes (au choix de Nicolas) :** liste finale des figurines et stats, réseau
+(GodotSteam P2P), menus suivants (options, multijoueur).
+
+**Mettre en route un nouveau PC :**
+1. `git clone https://github.com/Kromen34/Chess-Battleground.git` puis `git lfs install && git lfs pull`
+   (sinon les DLL de GodotSteam sont des pointeurs LFS et Steam ne marche pas).
+   Ancien clone : `git remote set-url origin https://github.com/Kromen34/Chess-Battleground.git`.
+2. `bash tests.sh` (Git Bash) : télécharge Godot 4.3 dans `tools/bin/` et lance les tests.
+3. Jouer : éditeur Godot 4.3 → F5. Le client Steam doit être lancé et connecté avant le jeu.
+   PC sans carte graphique (Vulkan/D3D12 absents, ex. VM) : `tools\lancer_sans_gpu.bat`
+   (`-e` pour l'éditeur). Godot 4.3 ne bascule pas seul en OpenGL (seulement à partir de 4.4).
+4. Sans `gh` : les PR se font via l'API GitHub avec le jeton de Git Credential Manager.
+
 ## Lancer les tests (à faire avant tout push)
 
 ```sh
@@ -79,7 +104,7 @@ tools/            scripts utilitaires (get_godot.sh, conversion d'assets)
 ## Workflow Git
 
 - `main` doit toujours passer `./tests.sh` et s'exporter.
-- Une branche par chantier : `feat/<sujet>`, `fix/<sujet>`. Petits commits, messages en français,
+- Une branche par chantier : `feat/<sujet>`, `fix/<sujet>`, `docs/<sujet>`. Petits commits, messages en français,
   à l'impératif : `Ajoute la portée d'attaque aux UnitType`.
 - Avant de commencer une tâche : `git pull --rebase origin main`.
 - Avant de push : `./tests.sh` vert.
