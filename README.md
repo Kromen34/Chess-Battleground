@@ -15,7 +15,8 @@ git lfs install && git lfs pull
 
 Le téléchargement automatique marche sous Linux et sous Windows (lancer `bash tests.sh`
 depuis Git Bash). Ailleurs, ou pour utiliser un Godot déjà installé, passer son chemin
-via la variable `GODOT`. Pour jouer : ouvrir le projet dans l'éditeur et lancer `scenes/main.tscn`.
+via la variable `GODOT`. Pour jouer : ouvrir le projet dans l'éditeur Godot 4.3 et lancer (F5),
+avec le client Steam ouvert. Sur un PC sans carte graphique : `tools\lancer_sans_gpu.bat`.
 
 ## État actuel
 
@@ -23,9 +24,10 @@ via la variable `GODOT`. Pour jouer : ouvrir le projet dans l'éditeur et lancer
 - Figurines avec PM / PA / PV / dégâts / portée propres, définies en `.tres`
   (`src/core/units/data/`). Quatre types provisoires : Soldat, Cavalier, Archer, Gardien.
 - Règles (déplacement, attaque, fin de tour, victoire) centralisées dans `src/core/rules.gd`,
-  30 tests headless.
+  tests headless (`./tests.sh`).
 - IA de référence (`src/ai/simple_ai.gd`) : une partie IA vs IA se termine et est déterministe.
+- Menu principal avec le pseudo et l'avatar Steam (GodotSteam 4.15, AppID de test 480).
 - Scène 3D placeholder : clic figurine → sélection, clic case → déplacement,
-  clic ennemi → attaque, Entrée → fin de tour. L'IA joue le joueur 1.
+  clic ennemi → attaque, Entrée → fin de tour, Échap → menu. L'IA joue le joueur 1.
 
 Voir `CLAUDE.md` pour l'architecture et les conventions.
