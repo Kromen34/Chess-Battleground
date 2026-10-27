@@ -1,4 +1,4 @@
-# TD Battleground
+# Chess Battleground
 
 Jeu de plateau tactique en 3D, tour par tour. Godot 4.3 · GDScript · Steam.
 
@@ -7,8 +7,8 @@ Jeu de plateau tactique en 3D, tour par tour. Godot 4.3 · GDScript · Steam.
 ## Démarrer
 
 ```sh
-git clone https://github.com/Kromen34/TD-Battleground.git
-cd TD-Battleground
+git clone https://github.com/Kromen34/Chess-Battleground.git
+cd Chess-Battleground
 git lfs install && git lfs pull
 ./tests.sh          # télécharge Godot dans tools/bin/ si besoin, puis lance les tests
 ```

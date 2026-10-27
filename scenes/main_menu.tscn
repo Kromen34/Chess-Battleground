@@ -57,7 +57,7 @@ theme_override_constants/separation = 16
 [node name="Title" type="Label" parent="Center"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 48
-text = "TD Battleground"
+text = "Chess Battleground"
 horizontal_alignment = 1
 
 [node name="Spacer" type="Control" parent="Center"]

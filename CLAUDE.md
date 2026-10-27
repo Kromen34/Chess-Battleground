@@ -1,4 +1,4 @@
-# TD Battleground — guide pour les sessions Claude Code
+# Chess Battleground — guide pour les sessions Claude Code
 
 Jeu de plateau tactique en 3D (Godot 4.3, GDScript), tour par tour, publié sur Steam.
 1v1 uniquement (PvP ou PvE), sur un plateau 8×8 avec une zone de spawn de 8×2 par
