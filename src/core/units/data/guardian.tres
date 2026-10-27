@@ -13,4 +13,4 @@ damage = 4
 attack_range = 1
 move_directions = Array[StringName]([&"n", &"s", &"e", &"w"])
 can_jump = false
-model_path = ""
+model_path = "res://assets/models/draconian/dragon_a_wild.glb"

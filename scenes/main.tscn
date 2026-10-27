@@ -1,44 +1,28 @@
-[gd_scene load_steps=7 format=3 uid="uid://b0tdbattlemain"]
+[gd_scene load_steps=6 format=3 uid="uid://b0tdbattlemain"]
 
 [ext_resource type="Script" path="res://src/game_controller.gd" id="1_ctrl"]
 [ext_resource type="Script" path="res://src/view/board_view.gd" id="2_view"]
-[ext_resource type="Script" path="res://src/view/battleground_decor.gd" id="3_decor"]
-
-[sub_resource type="ProceduralSkyMaterial" id="sky_mat"]
-sky_top_color = Color(0.12, 0.13, 0.22, 1)
-sky_horizon_color = Color(0.62, 0.42, 0.34, 1)
-sky_curve = 0.12
-ground_bottom_color = Color(0.08, 0.06, 0.05, 1)
-ground_horizon_color = Color(0.45, 0.32, 0.27, 1)
-sun_angle_max = 20.0
-
-[sub_resource type="Sky" id="sky"]
-sky_material = SubResource("sky_mat")
+[ext_resource type="Script" path="res://src/view/tabletop_decor.gd" id="3_decor"]
+[ext_resource type="Script" path="res://src/view/camera_rig.gd" id="4_cam"]
 
 [sub_resource type="Environment" id="Environment_main"]
-background_mode = 2
-sky = SubResource("sky")
-ambient_light_source = 3
-ambient_light_color = Color(0.5, 0.52, 0.62, 1)
-ambient_light_sky_contribution = 0.6
-ambient_light_energy = 0.55
-tonemap_mode = 3
-tonemap_white = 6.0
+background_mode = 1
+background_color = Color(0.02, 0.02, 0.025, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.32, 0.28, 0.26, 1)
+ambient_light_energy = 0.35
+tonemap_mode = 2
+tonemap_white = 4.0
 ssao_enabled = true
-ssao_radius = 0.8
-ssao_intensity = 1.6
+ssao_radius = 1.2
+ssao_intensity = 2.0
 glow_enabled = true
-glow_intensity = 0.7
-glow_bloom = 0.08
-glow_hdr_threshold = 1.2
-fog_enabled = true
-fog_light_color = Color(0.42, 0.36, 0.38, 1)
-fog_light_energy = 0.8
-fog_density = 0.012
-fog_sky_affect = 0.35
+glow_intensity = 0.6
+glow_bloom = 0.05
+glow_hdr_threshold = 1.0
 adjustment_enabled = true
-adjustment_contrast = 1.08
-adjustment_saturation = 1.05
+adjustment_contrast = 1.05
+adjustment_saturation = 1.1
 
 [node name="Main" type="Node3D"]
 script = ExtResource("1_ctrl")
@@ -50,17 +34,14 @@ script = ExtResource("2_view")
 [node name="Decor" type="Node3D" parent="."]
 script = ExtResource("3_decor")
 
-[node name="Camera3D" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.615661, 0.788011, 0, -0.788011, 0.615661, 0, 10.2, 8.6)
-fov = 45.0
+[node name="CameraRig" type="Node3D" parent="."]
+script = ExtResource("4_cam")
 
-[node name="Sun" type="DirectionalLight3D" parent="."]
-transform = Transform3D(0.5, -0.612372, 0.612372, 0, 0.707107, 0.707107, -0.866025, -0.353553, 0.353553, 0, 6, 0)
-light_color = Color(1, 0.88, 0.76, 1)
-light_energy = 1.25
-shadow_enabled = true
-shadow_blur = 1.5
-directional_shadow_max_distance = 40.0
+[node name="Camera3D" type="Camera3D" parent="CameraRig"]
+current = true
+fov = 45.0
+near = 0.1
+far = 400.0
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_main")
