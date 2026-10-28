@@ -52,7 +52,7 @@ demande de licence jeu vidéo à Artisan Guild.
    (sinon les DLL de GodotSteam sont des pointeurs LFS et Steam ne marche pas).
    Ancien clone : `git remote set-url origin https://github.com/Kromen34/Chess-Battleground.git`.
 2. `bash tests.sh` (Git Bash) : télécharge Godot 4.3 dans `tools/bin/` et lance les tests.
-3. Jouer : éditeur Godot 4.3 → F5. Le client Steam doit être lancé et connecté avant le jeu.
+3. Jouer : double-clic sur `Lancer_le_jeu.cmd` (`-e` : l'éditeur), ou éditeur Godot 4.3 → F5. Le client Steam doit être lancé et connecté avant le jeu.
    PC sans carte graphique (Vulkan/D3D12 absents, ex. VM) : `tools\lancer_sans_gpu.bat`
    (`-e` pour l'éditeur). Godot 4.3 ne bascule pas seul en OpenGL (seulement à partir de 4.4).
 4. Sans `gh` : les PR se font via l'API GitHub avec le jeton de Git Credential Manager.
