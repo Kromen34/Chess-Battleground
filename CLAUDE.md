@@ -47,6 +47,16 @@ court et à jour : si tu changes une convention, mets-la à jour ici.
 **Prochaines pistes (au choix de Nicolas) :** associer les dragons retenus aux unités,
 système de cartes/deck, factions et stats, dés de mouvement, compteurs sur la table.
 
+**Prévu (Nicolas, 28/10) :** passer le dépôt en privé (GitHub Pro), puis versionner
+`Figurines/` en Git LFS : retirer `Figurines/` du `.gitignore`, ajouter `*.glb` au suivi LFS
+s'il n'y est pas, vérifier avec `git lfs ls-files` avant de pousser. **Pas avant** que le
+dépôt soit privé (sinon = distribution des modèles sous licence).
+
+**Idée à long terme :** outil de peinture des figurines dans le jeu, style Photoshop (pas
+Paint) : dépliage UV (xatlas) dans `assembler_figurine.py`, peinture projetée écran -> texture,
+calques, pinceaux, pression tablette, canaux métal / brillance, et pinceaux de figuriniste
+qui exploitent creux et arêtes (lavis, brossage à sec). À concevoir avec Nicolas.
+
 À décider : passer le dépôt en privé pour versionner les modèles (LFS), mail de
 demande de licence jeu vidéo à Artisan Guild.
 
