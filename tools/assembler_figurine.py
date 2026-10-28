@@ -218,6 +218,54 @@ def snap_base(base_pos, others):
     return base_pos + shift
 
 
+def _spheres(pos, faces, sign, radii=np.arange(0.6, 4.0, 0.1)):
+    """Repère les portions de sphère d'un maillage par vote : chaque sommet vote pour le
+    centre situé à r le long de sa normale (sign=-1 : boules, +1 : creux).
+    Retourne [(rayon, centre)] des sphères nettes, distinctes, de la plus nette à la moins."""
+    normals = vertex_normals(pos, faces)
+    found = []
+    for r in radii:
+        c = pos + sign * r * normals
+        keys = np.floor(c / 0.15).astype(np.int64)
+        _, inv, cnt = np.unique(keys, axis=0, return_inverse=True, return_counts=True)
+        inv = inv.ravel()
+        for i in np.argsort(-cnt)[:6]:
+            found.append((cnt[i] / (r * r), r, c[inv == i].mean(0)))
+    found.sort(key=lambda t: -t[0])
+    best = found[0][0]
+    out = []
+    for score, r, c in found:
+        if score < 0.3 * best:
+            break
+        if all(np.linalg.norm(c - c2) > 2.0 for _, c2 in out):
+            out.append((r, c))
+    return out
+
+
+def fit_balljoint(part_pos, part_faces, other_pos, other_faces):
+    """Arme à rotule : les boules du poignet (dans la pièce) vont dans les creux du bout
+    des bras (dans le reste de la figurine). Le fichier de l'arme ne la place pas
+    forcément au bon endroit ; on la déplace (sans la tourner) pour que ses boules
+    tombent dans des creux de même rayon. Retourne les positions recalées."""
+    balls = _spheres(part_pos, part_faces, -1.0)[:2]
+    sockets = _spheres(other_pos, other_faces, +1.0)
+    best = None
+    for rb, cb in balls:
+        for rs, cs in sockets:
+            if abs(rb - rs) > 0.25:
+                continue
+            shift = cs - cb
+            # Toutes les boules doivent tomber dans un creux avec ce même décalage.
+            err = max(min(np.linalg.norm(c + shift - s2) for _, s2 in sockets) for _, c in balls)
+            if best is None or err < best[0]:
+                best = (err, shift)
+    if best is None or best[0] > 0.5:
+        print("  (rotule : pas d'emboîtement trouvé, pièce laissée en place)", flush=True)
+        return part_pos
+    print(f"  rotule : pièce déplacée de {np.round(best[1], 2)} mm (écart {best[0]:.2f} mm)", flush=True)
+    return part_pos + best[1]
+
+
 def build_variant(kit, name, originals):
     parts_by_id = {p["id"]: p for p in kit["parts"]}
     parts = [parts_by_id[i] for i in kit["variants"][name]]
@@ -227,6 +275,13 @@ def build_variant(kit, name, originals):
         if p.get("snap_under"):
             others = [originals[q["id"]][0] for q in parts if q is not p]
             originals[p["id"]] = (snap_base(originals[p["id"]][0], others), originals[p["id"]][1])
+        if p.get("fit_balljoint"):
+            rest = [originals[q["id"]] for q in parts if q is not p and q["material"] != "base"]
+            offs = np.cumsum([0] + [len(r[0]) for r in rest])
+            other_pos = np.concatenate([r[0] for r in rest])
+            other_faces = np.concatenate([r[1] + o for r, o in zip(rest, offs[:-1])])
+            originals[p["id"]] = (fit_balljoint(*originals[p["id"]], other_pos, other_faces),
+                                  originals[p["id"]][1])
 
     # Repère : socle centré, posé au sol, diamètre [footprint] cases.
     base = next(originals[p["id"]][0] for p in parts if p["material"] == "base")

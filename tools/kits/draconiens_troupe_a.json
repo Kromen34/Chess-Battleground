@@ -20,7 +20,8 @@
       "id": "k1_spear_lr",
       "name": "spear_lr",
       "file": "Kit I (Winged Impaler)/Draconian_Spear_L+R.stl",
-      "material": "weapon"
+      "material": "weapon",
+      "fit_balljoint": true
     },
     {
       "id": "body2",

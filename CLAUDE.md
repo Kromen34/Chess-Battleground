@@ -85,6 +85,10 @@ demande de licence jeu vidéo à Artisan Guild.
   triangles en plus, ex. ailes) et variantes (liste de pièces) -> un GLB par variante dans
   `Figurines/<output_dir>/` (Dragons, Draconiens). Dragons B et D : socle modélisé ailleurs, `"snap_under": true` le recale
   sous les pattes (vérifier les socles au rendu pour tout nouveau kit).
+  Armes à rotule (boule au poignet, creux au bout du bras) parfois mal placées dans leur
+  fichier (lance du draconien A) : `"fit_balljoint": true` sur la pièce détecte boules et
+  creux (même rayon) et déplace l'arme pour qu'ils s'emboîtent. Pour repérer une arme mal
+  placée : distance mini arme / porteur, ~0,01 mm quand c'est bon.
 - Matériaux : couleurs unies (un STL n'a pas de textures) multipliées par le lavis. Le nœud
   `base` du GLB prend la couleur de l'équipe dans `BoardView` (en gardant le lavis).
 - Test provisoire : Cavalier = `dragon_a_lancier`, Gardien = `dragon_a_sauvage` (`model_path` des `.tres`).
