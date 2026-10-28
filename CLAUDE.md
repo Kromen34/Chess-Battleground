@@ -34,6 +34,8 @@ court et à jour : si tu changes une convention, mets-la à jour ici.
 - Figurines : les 14 variantes de dragons Artisan Guild (kits d'assaut A à D sauvage /
   harnaché / monté, Azgrathok 1 ou 5 têtes) dans `Figurines/Dragons/`, détaillées
   (350-500k triangles, LOD Godot) avec lavis des creux. Nicolas trie celles qu'il garde.
+- Galerie des figurines (`scenes/figurine_gallery.tscn`, bouton du menu) : ← → pour changer,
+  clic enfoncé pour tourner, molette pour zoomer. Liste tous les .glb de `res://Figurines/*/`.
 - Tests : 53 tests verts (`./tests.sh`).
 
 **Prochaines étapes du serveur :** authentification par ticket de session Steam, PostgreSQL
@@ -119,7 +121,8 @@ src/view/         Rendu 3D : lit le GameState, ne le modifie jamais directement.
   board_view.gd   Cases, figurines (GLB ou cylindre), clics ; signal board_built(bounds)
   tabletop_decor.gd  Table, pièce et lumière, construits autour du plateau
   camera_rig.gd   Caméra orbitale (souris)
-src/ui/           Menus et écrans 2D (main_menu.gd = scène de démarrage, options_menu.gd)
+src/ui/           Menus et écrans (main_menu.gd = scène de démarrage, options_menu.gd,
+                  figurine_gallery.gd)
 src/platform/     steam_service.gd : autoload SteamService (init Steam, pseudo, avatar)
                   graphics_settings.gd : autoload GraphicsSettings (user://settings.cfg)
 addons/godotsteam GodotSteam 4.15 GDExtension (dernière version compatible Godot 4.3), binaires en LFS
