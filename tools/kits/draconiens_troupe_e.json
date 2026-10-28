@@ -1,0 +1,71 @@
+{
+  "source": "I:/Mon Drive/3D/Miniatures/Artisan guild/myairbridge-50 Draconian Scourge - June 2023 AG/50 Draconian Scourge - June 2023 AG/Draconian Shock Troops/Draconian Shock Troop E",
+  "output_dir": "Figurines/Draconiens",
+  "triangles": 300000,
+  "footprint": 0.85,
+  "parts": [
+    {
+      "id": "base",
+      "name": "base",
+      "file": "Base_Draconian_E.stl",
+      "material": "base"
+    },
+    {
+      "id": "body1",
+      "name": "body",
+      "file": "Kit I (Winged Bolter)/Draconian_Shock_Troop_E_(Winged) (Fixed).stl",
+      "material": "scales"
+    },
+    {
+      "id": "k1_heavy_bolter_r",
+      "name": "heavy_bolter_r",
+      "file": "Kit I (Winged Bolter)/Draconian_Heavy_Bolter_R.stl",
+      "material": "weapon"
+    },
+    {
+      "id": "k1_holding_hand_l",
+      "name": "holding_hand_l",
+      "file": "Kit I (Winged Bolter)/Draconian_Holding_Hand_L.stl",
+      "material": "scales"
+    },
+    {
+      "id": "k1_quiver",
+      "name": "quiver",
+      "file": "Kit I (Winged Bolter)/Draconian_Quiver.stl",
+      "material": "leather"
+    },
+    {
+      "id": "body2",
+      "name": "body",
+      "file": "Kit II (Wingless Assassin)/DrDraconian_Shock_Troop_E_(Wingless) (Fixed).stl",
+      "material": "scales"
+    },
+    {
+      "id": "k2_dagger_l",
+      "name": "dagger_l",
+      "file": "Kit II (Wingless Assassin)/Draconian_Dagger_L.stl",
+      "material": "weapon"
+    },
+    {
+      "id": "k2_dagger_r",
+      "name": "dagger_r",
+      "file": "Kit II (Wingless Assassin)/Draconian_Dagger_R.stl",
+      "material": "weapon"
+    }
+  ],
+  "variants": {
+    "draconien_e_arbaletrier_aile": [
+      "base",
+      "body1",
+      "k1_heavy_bolter_r",
+      "k1_holding_hand_l",
+      "k1_quiver"
+    ],
+    "draconien_e_assassin": [
+      "base",
+      "body2",
+      "k2_dagger_l",
+      "k2_dagger_r"
+    ]
+  }
+}

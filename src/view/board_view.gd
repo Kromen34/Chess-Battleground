@@ -185,6 +185,7 @@ func _tint_base(model: Node3D, color: Color) -> void:
 		return
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = color.darkened(0.25)
+	mat.vertex_color_use_as_albedo = true  # garde le lavis (creux assombris) du modèle
 	mat.roughness = 0.6
 	mat.metallic = 0.3
 	base.material_override = mat

@@ -1,0 +1,58 @@
+{
+  "source": "I:/Mon Drive/3D/Miniatures/Artisan guild/myairbridge-50 Draconian Scourge - June 2023 AG/50 Draconian Scourge - June 2023 AG/Draconian Shock Troops/Draconian Shock Troop A - Ok",
+  "output_dir": "Figurines/Draconiens",
+  "triangles": 300000,
+  "footprint": 0.85,
+  "parts": [
+    {
+      "id": "base",
+      "name": "base",
+      "file": "Base_Draconian_A.stl",
+      "material": "base"
+    },
+    {
+      "id": "body1",
+      "name": "body",
+      "file": "Kit I (Winged Impaler)/Draconian_Shock_Troop_A_(Winged) (Fixed).stl",
+      "material": "scales"
+    },
+    {
+      "id": "k1_spear_lr",
+      "name": "spear_lr",
+      "file": "Kit I (Winged Impaler)/Draconian_Spear_L+R.stl",
+      "material": "weapon",
+      "fit_balljoint": true
+    },
+    {
+      "id": "body2",
+      "name": "body",
+      "file": "Kit II (Wingless Swordman)/Draconian_Shock_Troop_A_(Wingless).stl",
+      "material": "scales"
+    },
+    {
+      "id": "k2_shield_l",
+      "name": "shield_l",
+      "file": "Kit II (Wingless Swordman)/Draconian_Shield_L.stl",
+      "material": "armor"
+    },
+    {
+      "id": "k2_sword_r",
+      "name": "sword_r",
+      "file": "Kit II (Wingless Swordman)/Draconian_Sword_R.stl",
+      "material": "weapon"
+    }
+  ],
+  "variants": {
+    "draconien_a_empaleur_aile": [
+      "base",
+      "body1",
+      "k1_spear_lr"
+    ],
+    "draconien_a_epeiste": [
+      "base",
+      "body2",
+      "k2_shield_l",
+      "k2_sword_r"
+    ]
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "source": "I:/Mon Drive/3D/Miniatures/Artisan guild/myairbridge-50 Draconian Scourge - June 2023 AG/50 Draconian Scourge - June 2023 AG/Azgrathok - Chaos Dragonlord",
+  "output_dir": "Figurines/Dragons",
+  "triangles": 500000,
+  "footprint": 0.85,
+  "parts": [
+    {
+      "id": "base",
+      "name": "base",
+      "file": "Base_Azgrathok.stl",
+      "material": "base"
+    },
+    {
+      "id": "legs",
+      "name": "legs",
+      "file": "Azgrathok_Legs.stl",
+      "material": "scales"
+    },
+    {
+      "id": "body_single",
+      "name": "body",
+      "file": "Single Head Version Body/Azgrathok_Body_(No_Extra_Heads_Sockets) (h2).stl",
+      "material": "scales"
+    },
+    {
+      "id": "body_sockets",
+      "name": "body",
+      "file": "5 Head Version Body/Azgrathok_Body_(Extra_Heads_Sockets) (h2).stl",
+      "material": "scales"
+    },
+    {
+      "id": "head",
+      "name": "head",
+      "file": "Azgrathok_Head.stl",
+      "material": "scales"
+    },
+    {
+      "id": "wing_l",
+      "name": "wing_l",
+      "file": "Azgrathok_Wing_L.stl",
+      "material": "wings",
+      "weight": 1.5
+    },
+    {
+      "id": "wing_r",
+      "name": "wing_r",
+      "file": "Azgrathok_Wing_R.stl",
+      "material": "wings",
+      "weight": 1.5
+    },
+    {
+      "id": "head_bl",
+      "name": "head_bottom_l",
+      "file": "5 Head Version Body/Azgrathok_Extrahead_Bottom_L.stl",
+      "material": "scales"
+    },
+    {
+      "id": "head_br",
+      "name": "head_bottom_r",
+      "file": "5 Head Version Body/Azgrathok_Extrahead_Bottom_R.stl",
+      "material": "scales"
+    },
+    {
+      "id": "head_tl",
+      "name": "head_top_l",
+      "file": "5 Head Version Body/Azgrathok_Extrahead_Top_L.stl",
+      "material": "scales"
+    },
+    {
+      "id": "head_tr",
+      "name": "head_top_r",
+      "file": "5 Head Version Body/Azgrathok_Extrahead_Top_R (Fixed).stl",
+      "material": "scales"
+    }
+  ],
+  "variants": {
+    "azgrathok_une_tete": [
+      "base",
+      "legs",
+      "body_single",
+      "head",
+      "wing_l",
+      "wing_r"
+    ],
+    "azgrathok_cinq_tetes": [
+      "base",
+      "legs",
+      "body_sockets",
+      "head",
+      "wing_l",
+      "wing_r",
+      "head_bl",
+      "head_br",
+      "head_tl",
+      "head_tr"
+    ]
+  }
+}

@@ -8,7 +8,7 @@ grille 8×8 en dur (obstacles, variantes de plateau futures).
 Ce fichier est lu par chaque session Claude Code, sur chaque PC. Il doit rester
 court et à jour : si tu changes une convention, mets-la à jour ici.
 
-## Où on en est (mis à jour le 27/10/2026)
+## Où on en est (mis à jour le 28/10/2026)
 
 À relire en début de session : c'est la mémoire partagée entre les PC.
 
@@ -31,23 +31,33 @@ court et à jour : si tu changes une convention, mets-la à jour ici.
   clic gauche enfoncé = avancer/reculer, clic molette = vue de départ. Les clics du
   plateau sont pris au **relâchement** (un glisser de caméra avale le relâchement).
 - Menu Options graphiques (`src/ui/options_menu.gd` + autoload `GraphicsSettings`).
-- Premières figurines : dragons Artisan Guild (voir « Figurines »).
+- Figurines : les 14 variantes de dragons Artisan Guild (kits d'assaut A à D sauvage /
+  harnaché / monté, Azgrathok 1 ou 5 têtes) dans `Figurines/Dragons/`, détaillées
+  (350-500k triangles, LOD Godot) avec lavis des creux. Nicolas trie celles qu'il garde.
+- Les 23 variantes de draconiens dans `Figurines/Draconiens/` (Shock Troops A à F ailé /
+  sans ailes, Commander Drakvarr, Flamagath Blackflame, Onixia), 300-400k triangles.
+  Toutes les figurines du pack Draconian Scourge sont faites (37 en tout).
+- Galerie des figurines (`scenes/figurine_gallery.tscn`, bouton du menu) : ← → pour changer,
+  clic enfoncé pour tourner, molette pour zoomer. Liste tous les .glb de `res://Figurines/*/`.
 - Tests : 53 tests verts (`./tests.sh`).
 
 **Prochaines étapes du serveur :** authentification par ticket de session Steam, PostgreSQL
 (joueurs, decks, points), stats des figurines servies par le serveur.
 
-**Prochaines pistes (au choix de Nicolas) :** autres kits de dragons (B, C, D), système de
-cartes/deck, factions et stats, dés de mouvement, compteurs sur la table.
+**Prochaines pistes (au choix de Nicolas) :** associer les dragons retenus aux unités,
+système de cartes/deck, factions et stats, dés de mouvement, compteurs sur la table.
 
-**Prévu en priorité (demandé par Nicolas) :** les dragons manquent de détails (~100k triangles
-sur 2,4 M, clustering grossier qui écrase écailles, dents, griffes). À faire, puis comparer
-avant / après sur la même capture : (1) monter à ~300-400k triangles par figurine, Godot
-génère les LOD à l'import ; (2) meilleure simplification par fusion d'arêtes (Blender ou
-bibliothèque Python : leur téléchargement a été bloqué par le mode auto, demander à Nicolas
-d'autoriser) ; (3) « lavis » : assombrir les creux (cavité / occlusion calculée sur le
-modèle d'origine, en couleurs de sommets), comme une figurine peinte.
-À décider aussi : passer le dépôt en privé pour versionner les modèles (LFS), mail de
+**Prévu (Nicolas, 28/10) :** passer le dépôt en privé (GitHub Pro), puis versionner
+`Figurines/` en Git LFS : retirer `Figurines/` du `.gitignore`, ajouter `*.glb` au suivi LFS
+s'il n'y est pas, vérifier avec `git lfs ls-files` avant de pousser. **Pas avant** que le
+dépôt soit privé (sinon = distribution des modèles sous licence).
+
+**Idée à long terme :** outil de peinture des figurines dans le jeu, style Photoshop (pas
+Paint) : dépliage UV (xatlas) dans `assembler_figurine.py`, peinture projetée écran -> texture,
+calques, pinceaux, pression tablette, canaux métal / brillance, et pinceaux de figuriniste
+qui exploitent creux et arêtes (lavis, brossage à sec). À concevoir avec Nicolas.
+
+À décider : passer le dépôt en privé pour versionner les modèles (LFS), mail de
 demande de licence jeu vidéo à Artisan Guild.
 
 **Mettre en route un nouveau PC :**
@@ -55,13 +65,15 @@ demande de licence jeu vidéo à Artisan Guild.
    (sinon les DLL de GodotSteam sont des pointeurs LFS et Steam ne marche pas).
    Ancien clone : `git remote set-url origin https://github.com/Kromen34/Chess-Battleground.git`.
 2. `bash tests.sh` (Git Bash) : télécharge Godot 4.3 dans `tools/bin/` et lance les tests.
-3. Jouer : éditeur Godot 4.3 → F5. Le client Steam doit être lancé et connecté avant le jeu.
+3. Jouer : double-clic sur `Lancer_le_jeu.cmd` (`-e` : l'éditeur), ou éditeur Godot 4.3 → F5. Le client Steam doit être lancé et connecté avant le jeu.
    PC sans carte graphique (Vulkan/D3D12 absents, ex. VM) : `tools\lancer_sans_gpu.bat`
    (`-e` pour l'éditeur). Godot 4.3 ne bascule pas seul en OpenGL (seulement à partir de 4.4).
 4. Sans `gh` : les PR se font via l'API GitHub avec le jeton de Git Credential Manager.
-5. Figurines (absentes de git, voir « Figurines ») : les regénérer depuis les STL du Google
-   Drive de Nicolas, pour chaque kit : `python tools/assembler_figurine.py tools/kits/<kit>.json`
-   (+ le dossier des STL en 2e argument si le Drive n'est pas sur `I:`). Sans elles, le jeu
+5. Figurines (absentes de git, voir « Figurines ») : `pip install pymeshlab numpy`, puis les
+   regénérer depuis les STL du Google Drive de Nicolas, pour chaque kit :
+   `python tools/assembler_figurine.py tools/kits/<kit>.json` (+ le dossier des STL en 2e
+   argument si le Drive n'est pas sur `I:`, `-` sinon ; + des noms de variantes pour n'en
+   faire que certaines). Sans elles, le jeu
    affiche des cylindres à la place.
 6. Identité git : `git config user.name "Rips Nico"` et `git config user.email "kromen34@hotmail.com"`.
 
@@ -72,18 +84,26 @@ demande de licence jeu vidéo à Artisan Guild.
   les `.blend` / `.fbx` qui s'y trouvent (essais ratés de Nicolas).
 - **Licence** : le PDF fourni par Artisan Guild limite l'usage au personnel et interdit les
   jeux ; Nicolas dit avoir des droits commerciaux. Tant qu'une licence couvrant le jeu vidéo
-  n'est pas confirmée par écrit, `assets/models/draconian/` reste dans `.gitignore` (le
+  n'est pas confirmée par écrit, `Figurines/` (et l'ancien `assets/models/draconian/`) reste dans `.gitignore` (le
   dépôt est public : pousser les modèles = les distribuer). Ne jamais les commiter.
-- `tools/assembler_figurine.py` (numpy seul, pas de Blender) : les pièces d'un kit partagent
-  le même repère, on les fusionne telles quelles ; allègement par clustering de sommets à
-  quadriques (~100k triangles par figurine) ; socle = 0,85 case, figurine tournée vers -Z.
-  Un fichier par kit dans `tools/kits/` (pièces, matériau, triangles visés). Les membranes
-  fines (ailes) ont besoin de plus de triangles, sinon elles se trouent.
-- Matériaux : couleurs unies (un STL n'a pas de textures). Le nœud `base` du GLB prend la
-  couleur de l'équipe dans `BoardView`.
-- Test provisoire : Cavalier = Spear Dragonrider, Gardien = Wild Dragon (`model_path` des `.tres`).
-- Vérifier un modèle sans lancer le jeu : rendu sous 4 angles par un script `-s` qui
-  instancie le GLB et sauve `root.get_texture().get_image()` (le PC a une RTX 5080).
+- `tools/assembler_figurine.py` (numpy + pymeshlab) : les pièces d'un kit partagent le même
+  repère, on les fusionne telles quelles ; allègement par fusion d'arêtes à quadriques
+  (350k triangles par dragon, 500k pour Azgrathok ; Godot fait les LOD à l'import) ;
+  socle = 0,85 case, figurine tournée vers -Z. Lavis en couleurs de sommets : occlusion
+  ambiante (GPU) sur la figurine entière + creux fins assombris, arêtes éclaircies.
+- Un fichier par kit dans `tools/kits/` : pièces (fichier, matériau, `weight` = part de
+  triangles en plus, ex. ailes) et variantes (liste de pièces) -> un GLB par variante dans
+  `Figurines/<output_dir>/` (Dragons, Draconiens). Dragons B et D : socle modélisé ailleurs, `"snap_under": true` le recale
+  sous les pattes (vérifier les socles au rendu pour tout nouveau kit).
+  Armes à rotule (boule au poignet, creux au bout du bras) parfois mal placées dans leur
+  fichier (lance du draconien A) : `"fit_balljoint": true` sur la pièce détecte boules et
+  creux (même rayon) et déplace l'arme pour qu'ils s'emboîtent. Pour repérer une arme mal
+  placée : distance mini arme / porteur, ~0,01 mm quand c'est bon.
+- Matériaux : couleurs unies (un STL n'a pas de textures) multipliées par le lavis. Le nœud
+  `base` du GLB prend la couleur de l'équipe dans `BoardView` (en gardant le lavis).
+- Test provisoire : Cavalier = `dragon_a_lancier`, Gardien = `dragon_a_sauvage` (`model_path` des `.tres`).
+- Vérifier un modèle sans lancer le jeu : `tools/rendu_figurine.gd` (4 angles dans un PNG,
+  voir l'en-tête ; importer d'abord avec `godot --headless --path . --editor --quit`).
 
 ## Lancer les tests (à faire avant tout push)
 
@@ -118,7 +138,8 @@ src/view/         Rendu 3D : lit le GameState, ne le modifie jamais directement.
   board_view.gd   Cases, figurines (GLB ou cylindre), clics ; signal board_built(bounds)
   tabletop_decor.gd  Table, pièce et lumière, construits autour du plateau
   camera_rig.gd   Caméra orbitale (souris)
-src/ui/           Menus et écrans 2D (main_menu.gd = scène de démarrage, options_menu.gd)
+src/ui/           Menus et écrans (main_menu.gd = scène de démarrage, options_menu.gd,
+                  figurine_gallery.gd)
 src/platform/     steam_service.gd : autoload SteamService (init Steam, pseudo, avatar)
                   graphics_settings.gd : autoload GraphicsSettings (user://settings.cfg)
 addons/godotsteam GodotSteam 4.15 GDExtension (dernière version compatible Godot 4.3), binaires en LFS
@@ -126,7 +147,7 @@ scenes/           Scènes .tscn
 assets/           models/ (GLB), textures/, audio/ — tout en Git LFS
 tests/            run_tests.gd (runner) + test_*.gd
 tools/            get_godot.sh, lancer_sans_gpu.bat, lancer_serveur.bat, deployer_serveur.sh,
-                  assembler_figurine.py + kits/
+                  assembler_figurine.py + kits/, rendu_figurine.gd
 ```
 
 ## Règles d'architecture (non négociables)

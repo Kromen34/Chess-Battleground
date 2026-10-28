@@ -1,0 +1,64 @@
+{
+  "source": "I:/Mon Drive/3D/Miniatures/Artisan guild/myairbridge-50 Draconian Scourge - June 2023 AG/50 Draconian Scourge - June 2023 AG/Draconian Shock Troops/Draconian Shock Troop B - OK",
+  "output_dir": "Figurines/Draconiens",
+  "triangles": 300000,
+  "footprint": 0.85,
+  "parts": [
+    {
+      "id": "base",
+      "name": "base",
+      "file": "Base_Draconian_B.stl",
+      "material": "base"
+    },
+    {
+      "id": "body1",
+      "name": "body",
+      "file": "Kit I (Winged Axeman)/Draconian_Shock_Troop_B_(Wingled).stl",
+      "material": "scales"
+    },
+    {
+      "id": "k1_axe_r",
+      "name": "axe_r",
+      "file": "Kit I (Winged Axeman)/Draconian_Axe_R.stl",
+      "material": "weapon"
+    },
+    {
+      "id": "k1_shield_l",
+      "name": "shield_l",
+      "file": "Kit I (Winged Axeman)/Draconian_Shield_L.stl",
+      "material": "armor"
+    },
+    {
+      "id": "body2",
+      "name": "body",
+      "file": "Kit II (Wingless Assassin)/Draconian_Shock_Troop_B_(Wingless).stl",
+      "material": "scales"
+    },
+    {
+      "id": "k2_dagger_l",
+      "name": "dagger_l",
+      "file": "Kit II (Wingless Assassin)/Draconian_Dagger_L.stl",
+      "material": "weapon"
+    },
+    {
+      "id": "k2_dagger_r",
+      "name": "dagger_r",
+      "file": "Kit II (Wingless Assassin)/Draconian_Dagger_R.stl",
+      "material": "weapon"
+    }
+  ],
+  "variants": {
+    "draconien_b_guerrier_hache_aile": [
+      "base",
+      "body1",
+      "k1_axe_r",
+      "k1_shield_l"
+    ],
+    "draconien_b_assassin": [
+      "base",
+      "body2",
+      "k2_dagger_l",
+      "k2_dagger_r"
+    ]
+  }
+}

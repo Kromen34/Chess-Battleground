@@ -1,0 +1,57 @@
+{
+  "source": "I:/Mon Drive/3D/Miniatures/Artisan guild/myairbridge-50 Draconian Scourge - June 2023 AG/50 Draconian Scourge - June 2023 AG/Draconian Shock Troops/Draconian Shock Troop F",
+  "output_dir": "Figurines/Draconiens",
+  "triangles": 300000,
+  "footprint": 0.85,
+  "parts": [
+    {
+      "id": "base",
+      "name": "base",
+      "file": "Base_Draconian_F.stl",
+      "material": "base"
+    },
+    {
+      "id": "body1",
+      "name": "body",
+      "file": "Kit I (Winged Impaler)/Draconian_Shock_Troop_F_(Winged) (Fixed).stl",
+      "material": "scales"
+    },
+    {
+      "id": "k1_spear_lr_grip2",
+      "name": "spear_lr_grip2",
+      "file": "Kit I (Winged Impaler)/Draconian_Spear_L+R_(grip2).stl",
+      "material": "weapon"
+    },
+    {
+      "id": "body2",
+      "name": "body",
+      "file": "Kit II (Wingless Spellblade)/Draconian_Shock_Troop_F_(Wingless).stl",
+      "material": "scales"
+    },
+    {
+      "id": "k2_fire_hand_l",
+      "name": "fire_hand_l",
+      "file": "Kit II (Wingless Spellblade)/Draconian_Fire_Hand_L.stl",
+      "material": "scales"
+    },
+    {
+      "id": "k2_sword_r",
+      "name": "sword_r",
+      "file": "Kit II (Wingless Spellblade)/Draconian_Sword_R.stl",
+      "material": "weapon"
+    }
+  ],
+  "variants": {
+    "draconien_f_empaleur_aile": [
+      "base",
+      "body1",
+      "k1_spear_lr_grip2"
+    ],
+    "draconien_f_lame_sorciere": [
+      "base",
+      "body2",
+      "k2_fire_hand_l",
+      "k2_sword_r"
+    ]
+  }
+}

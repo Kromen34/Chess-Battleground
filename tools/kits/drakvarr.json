@@ -1,0 +1,70 @@
+{
+  "source": "I:/Mon Drive/3D/Miniatures/Artisan guild/myairbridge-50 Draconian Scourge - June 2023 AG/50 Draconian Scourge - June 2023 AG/Commander Drakvarr - OK",
+  "output_dir": "Figurines/Draconiens",
+  "triangles": 400000,
+  "footprint": 0.85,
+  "parts": [
+    {
+      "id": "base",
+      "name": "base",
+      "file": "Base_Drakvarr.stl",
+      "material": "base"
+    },
+    {
+      "id": "body_wings",
+      "name": "body",
+      "file": "Commander_Drakvarr.stl",
+      "material": "scales"
+    },
+    {
+      "id": "body_nowings",
+      "name": "body",
+      "file": "Commander_Drakvarr_(Wingless).stl",
+      "material": "scales"
+    },
+    {
+      "id": "halberd",
+      "name": "halberd",
+      "file": "Draconian_Halberd_L.stl",
+      "material": "weapon"
+    },
+    {
+      "id": "skysplitter",
+      "name": "halberd",
+      "file": "Draconian_Halberd_L (Skysplitter).stl",
+      "material": "weapon"
+    },
+    {
+      "id": "talisman",
+      "name": "talisman",
+      "file": "Draconian_Talisman.stl",
+      "material": "weapon"
+    }
+  ],
+  "variants": {
+    "drakvarr_aile_hallebarde": [
+      "base",
+      "body_wings",
+      "halberd",
+      "talisman"
+    ],
+    "drakvarr_aile_skysplitter": [
+      "base",
+      "body_wings",
+      "skysplitter",
+      "talisman"
+    ],
+    "drakvarr_hallebarde": [
+      "base",
+      "body_nowings",
+      "halberd",
+      "talisman"
+    ],
+    "drakvarr_skysplitter": [
+      "base",
+      "body_nowings",
+      "skysplitter",
+      "talisman"
+    ]
+  }
+}

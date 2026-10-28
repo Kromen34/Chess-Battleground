@@ -1,118 +1,74 @@
-"""Assemble les pièces STL d'une figurine d'impression en un seul .glb pour Godot.
+"""Assemble les pièces STL d'une figurine d'impression en .glb pour Godot.
 
 Les kits de figurines sont découpés pour l'impression, mais leurs pièces partagent
-le même repère : on les fusionne telles quelles. Chaque pièce est allégée
-(clustering de sommets avec quadriques d'erreur, qui garde les arêtes et les reliefs
-mieux qu'une simple moyenne), puis convertie :
-  - millimètres -> unités du jeu : le socle fait FOOTPRINT cases de diamètre ;
+le même repère : on les fusionne telles quelles. Pour chaque variante du kit :
+  - allègement par fusion d'arêtes à quadriques (pymeshlab), qui garde écailles, dents
+    et griffes bien mieux qu'un clustering de sommets ;
+  - « lavis » de figurine peinte en couleurs de sommets : occlusion ambiante calculée sur
+    la figurine entière (les pièces s'ombrent entre elles) + creux fins assombris et
+    arêtes légèrement éclaircies (brossage à sec) ;
+  - millimètres -> unités du jeu : le socle fait "footprint" cases de diamètre ;
   - axes : STL Z vers le haut -> Godot Y vers le haut, figurine tournée vers -Z ;
   - origine : centre du socle, au ras du sol.
+Godot génère les niveaux de détail (LOD) à l'import : on peut garder beaucoup de triangles.
 
-Usage (dépendances : numpy uniquement) :
-  python tools/assembler_figurine.py tools/kits/<kit>.json [dossier_des_stl]
-où le .json décrit les pièces. "output" est relatif à la racine du dépôt ; le dossier
-des STL vient de "source", ou du 2e argument s'il est donné (autre PC, autre lecteur).
+Usage (dépendances : numpy, pymeshlab) :
+  python tools/assembler_figurine.py tools/kits/<kit>.json [dossier_des_stl] [variante ...]
+Le .json décrit les pièces et les variantes (voir tools/kits/). "output_dir" est relatif à
+la racine du dépôt ; le dossier des STL vient de "source", ou du 2e argument s'il est
+donné (« - » pour garder "source"). Sans nom de variante, elles sont toutes produites.
 """
 
 import json
 import os
 import struct
 import sys
+import time
 
 import numpy as np
-
-# Diamètre du socle en cases du plateau (une case = 1.0).
-FOOTPRINT = 0.85
+import pymeshlab
 
 # Matériaux de base, façon figurine peinte. Le jeu teinte "base" aux couleurs du joueur.
 MATERIALS = {
     "base": {"color": [0.16, 0.15, 0.14], "metallic": 0.0, "roughness": 0.85},
     "scales": {"color": [0.24, 0.06, 0.04], "metallic": 0.1, "roughness": 0.5},
     "wings": {"color": [0.2, 0.05, 0.04], "metallic": 0.05, "roughness": 0.6},
+    "horn": {"color": [0.55, 0.5, 0.42], "metallic": 0.0, "roughness": 0.55},
     "armor": {"color": [0.42, 0.4, 0.38], "metallic": 0.85, "roughness": 0.35},
     "rider": {"color": [0.3, 0.28, 0.26], "metallic": 0.7, "roughness": 0.4},
     "weapon": {"color": [0.62, 0.6, 0.58], "metallic": 0.9, "roughness": 0.3},
+    "leather": {"color": [0.22, 0.14, 0.09], "metallic": 0.0, "roughness": 0.7},
 }
 
+# Lavis : force de l'occlusion ambiante, des creux fins et de l'éclaircissement des arêtes.
+AO_STRENGTH = 0.65
+CAVITY_STRENGTH = 0.55
+EDGE_LIGHTEN = 0.18
 
-def load_stl(path):
-    """Retourne les triangles (N, 3, 3) d'un STL binaire, en float64."""
-    with open(path, "rb") as f:
-        head = f.read(84)
-    count = int.from_bytes(head[80:84], "little")
-    if os.path.getsize(path) != 84 + 50 * count:
-        raise ValueError(f"STL ASCII non géré : {path}")
-    dt = np.dtype([("n", "<f4", 3), ("v", "<f4", (3, 3)), ("a", "<u2")])
-    return np.fromfile(path, dtype=dt, offset=84)["v"].astype(np.float64)
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-def _cluster(tris, cell):
-    """Fusionne les sommets par cellule de taille [cell]. Retourne (positions, faces)."""
-    v = tris.reshape(-1, 3)
-    origin = v.min(0)
-    keys = np.floor((v - origin) / cell).astype(np.int64)
-    dims = keys.max(0) + 1
-    flat = (keys[:, 0] * dims[1] + keys[:, 1]) * dims[2] + keys[:, 2]
-    uniq, inv = np.unique(flat, return_inverse=True)
-    n = len(uniq)
-
-    # Quadrique d'erreur par cellule : somme des plans des triangles qui la touchent,
-    # pondérés par leur aire. Le sommet fusionné minimise la distance à ces plans.
-    e1 = tris[:, 1] - tris[:, 0]
-    e2 = tris[:, 2] - tris[:, 0]
-    cross = np.cross(e1, e2)
-    area = np.linalg.norm(cross, axis=1)
-    normal = cross / np.maximum(area, 1e-12)[:, None]
-    d = -np.einsum("ij,ij->i", normal, tris[:, 0])
-    w = np.repeat(area, 3)
-    nn = np.repeat(normal, 3, axis=0)
-    dd = np.repeat(d, 3)
-    a_mat = np.zeros((n, 3, 3))
-    b_vec = np.zeros((n, 3))
-    np.add.at(a_mat, inv, w[:, None, None] * nn[:, :, None] * nn[:, None, :])
-    np.add.at(b_vec, inv, -(w * dd)[:, None] * nn)
-    mean = np.zeros((n, 3))
-    np.add.at(mean, inv, v)
-    mean /= np.bincount(inv, minlength=n)[:, None]
-    # Régularisation vers la moyenne : stable sur les zones planes.
-    reg = 1e-3 * np.maximum(np.trace(a_mat, axis1=1, axis2=2), 1e-12)
-    a_mat += reg[:, None, None] * np.eye(3)
-    b_vec += reg[:, None] * mean
-    pos = np.linalg.solve(a_mat, b_vec[:, :, None])[:, :, 0]
-    # Le sommet doit rester dans (ou près de) sa cellule, sinon on garde la moyenne.
-    cell_lo = origin + np.floor((mean - origin) / cell) * cell
-    outside = np.any((pos < cell_lo - 0.5 * cell) | (pos > cell_lo + 1.5 * cell), axis=1)
-    pos[outside] = mean[outside]
-
-    faces = inv.reshape(-1, 3)
-    keep = (faces[:, 0] != faces[:, 1]) & (faces[:, 1] != faces[:, 2]) & (faces[:, 0] != faces[:, 2])
-    faces = faces[keep]
-    _, first = np.unique(np.sort(faces, axis=1), axis=0, return_index=True)
-    faces = faces[np.sort(first)]
-    # Retire les sommets devenus inutilisés.
-    used, remap = np.unique(faces, return_inverse=True)
-    return pos[used], remap.reshape(-1, 3)
+def load_part(path):
+    """Charge un STL et retourne (positions, faces) en numpy, sommets fusionnés."""
+    ms = pymeshlab.MeshSet()
+    ms.load_new_mesh(path)
+    ms.meshing_remove_duplicate_vertices()
+    ms.meshing_remove_unreferenced_vertices()
+    m = ms.current_mesh()
+    return m.vertex_matrix().copy(), m.face_matrix().copy()
 
 
-def simplify(tris, target):
-    """Allège jusqu'à environ [target] triangles (recherche de la taille de cellule)."""
-    if len(tris) <= target:
-        return _cluster(tris, 1e-4)
-    size = np.ptp(tris.reshape(-1, 3), axis=0).max()
-    lo, hi = size / 2000.0, size / 10.0
-    best = None
-    for _ in range(14):
-        cell = np.sqrt(lo * hi)
-        pos, faces = _cluster(tris, cell)
-        if best is None or abs(len(faces) - target) < abs(len(best[1]) - target):
-            best = (pos, faces)
-        if abs(len(faces) - target) < target * 0.05:
-            break
-        if len(faces) > target:
-            lo = cell
-        else:
-            hi = cell
-    return best
+def simplify(pos, faces, target):
+    """Fusion d'arêtes à quadriques jusqu'à [target] triangles."""
+    if len(faces) <= target:
+        return pos, faces
+    ms = pymeshlab.MeshSet()
+    ms.add_mesh(pymeshlab.Mesh(vertex_matrix=pos, face_matrix=faces))
+    ms.meshing_decimation_quadric_edge_collapse(
+        targetfacenum=int(target), qualitythr=0.4, preserveboundary=True, boundaryweight=2.0,
+        preservenormal=True, optimalplacement=True, planarquadric=True, autoclean=True)
+    m = ms.current_mesh()
+    return m.vertex_matrix().copy(), m.face_matrix().copy()
 
 
 def vertex_normals(pos, faces):
@@ -123,8 +79,57 @@ def vertex_normals(pos, faces):
     return vn / np.maximum(np.linalg.norm(vn, axis=1), 1e-12)[:, None]
 
 
+def _neighbour_mean(pos, faces, values):
+    """Moyenne de [values] sur les voisins de chaque sommet (par les arêtes)."""
+    acc = np.zeros_like(values)
+    cnt = np.zeros(len(pos))
+    for a, b in ((0, 1), (1, 2), (2, 0)):
+        np.add.at(acc, faces[:, a], values[faces[:, b]])
+        np.add.at(acc, faces[:, b], values[faces[:, a]])
+        np.add.at(cnt, faces[:, a], 1)
+        np.add.at(cnt, faces[:, b], 1)
+    shape = (-1,) + (1,) * (values.ndim - 1)
+    return acc / np.maximum(cnt, 1).reshape(shape)
+
+
+def cavity(pos, faces, normals):
+    """Creux (> 0) et arêtes saillantes (< 0) à petite échelle, dans [-1, 1]."""
+    lap = _neighbour_mean(pos, faces, pos) - pos
+    edge = np.linalg.norm(pos[faces[:, 0]] - pos[faces[:, 1]], axis=1).mean()
+    c = np.einsum("ij,ij->i", lap, normals) / max(edge, 1e-9)
+    for _ in range(2):
+        c = 0.5 * c + 0.5 * _neighbour_mean(pos, faces, c)
+    scale = np.percentile(np.abs(c), 95)
+    return np.clip(c / max(scale, 1e-9), -1.0, 1.0)
+
+
+def ambient_occlusion(pos, faces):
+    """Part du ciel visible par sommet (0 = enfoui, 1 = à découvert), figurine entière."""
+    ms = pymeshlab.MeshSet()
+    ms.add_mesh(pymeshlab.Mesh(vertex_matrix=pos, face_matrix=faces))
+    try:
+        ms.compute_scalar_ambient_occlusion_gpu(occmode="per-Vertex", reqviews=256, usegpu=True,
+                                                depthtexsize=2048)
+    except pymeshlab.PyMeshLabException as e:
+        print(f"  (occlusion sur GPU impossible : {e} ; calcul sur CPU, plus lent)", flush=True)
+        ms.compute_scalar_ambient_occlusion(rays=128)
+    ao = ms.current_mesh().vertex_scalar_array().copy()
+    lo, hi = np.percentile(ao, 2), np.percentile(ao, 98)
+    return np.clip((ao - lo) / max(hi - lo, 1e-9), 0.0, 1.0)
+
+
+def wash(pos, faces, normals):
+    """Facteur de couleur par sommet (multiplie la couleur du matériau)."""
+    ao = ambient_occlusion(pos, faces)
+    cav = cavity(pos, faces, normals)
+    shade = 1.0 - AO_STRENGTH * (1.0 - ao) ** 1.5
+    shade *= 1.0 - CAVITY_STRENGTH * np.clip(cav, 0.0, 1.0)
+    shade *= 1.0 + EDGE_LIGHTEN * np.clip(-cav, 0.0, 1.0)
+    return np.clip(shade, 0.05, 1.2)
+
+
 def write_glb(path, parts):
-    """parts : liste de (nom, matériau, positions, normales, faces)."""
+    """parts : liste de (nom, matériau, positions, normales, couleurs, faces)."""
     blob = bytearray()
     views, accessors, meshes, nodes = [], [], [], []
     mat_names = sorted({p[1] for p in parts})
@@ -133,7 +138,7 @@ def write_glb(path, parts):
         spec = MATERIALS[m]
         materials.append({
             "name": m,
-            # Les surfaces fines (membranes des ailes) perdent parfois une face à
+            # Les surfaces fines (membranes des ailes) peuvent perdre une face à
             # l'allègement : on affiche les deux côtés pour ne pas voir de trous.
             "doubleSided": True,
             "pbrMetallicRoughness": {
@@ -150,12 +155,14 @@ def write_glb(path, parts):
         blob.extend(data)
         return len(views) - 1
 
-    for name, mat, pos, nrm, faces in parts:
+    for name, mat, pos, nrm, col, faces in parts:
         pos32 = pos.astype("<f4")
+        rgba = np.concatenate([np.repeat(col[:, None], 3, axis=1), np.ones((len(col), 1))], axis=1)
         attrs = {}
-        for key, arr in (("POSITION", pos32), ("NORMAL", nrm.astype("<f4"))):
+        for key, arr, kind in (("POSITION", pos32, "VEC3"), ("NORMAL", nrm.astype("<f4"), "VEC3"),
+                               ("COLOR_0", rgba.astype("<f4"), "VEC4")):
             view = add_view(arr.tobytes(), 34962)
-            acc = {"bufferView": view, "componentType": 5126, "count": len(arr), "type": "VEC3"}
+            acc = {"bufferView": view, "componentType": 5126, "count": len(arr), "type": kind}
             if key == "POSITION":
                 acc["min"] = pos32.min(0).tolist()
                 acc["max"] = pos32.max(0).tolist()
@@ -191,45 +198,141 @@ def write_glb(path, parts):
         f.write(struct.pack("<II", len(blob), 0x004E4942) + bytes(blob))
 
 
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+def budgets(parts, originals, total):
+    """Répartit [total] triangles entre les pièces, au prorata de leur détail d'origine
+    (pondéré par "weight" : les membranes fines en demandent plus)."""
+    w = np.array([len(originals[p["id"]][1]) * p.get("weight", 1.0) for p in parts], dtype=float)
+    share = total * w / w.sum()
+    return [int(min(s, len(originals[p["id"]][1]))) for p, s in zip(parts, share)]
 
 
-def main(kit_path, source=None):
-    with open(kit_path, encoding="utf-8") as f:
-        kit = json.load(f)
-    src = source or kit["source"]
-    if not os.path.isdir(src):
-        sys.exit(f"Dossier des STL introuvable : {src}. "
-                 "Passe le bon dossier en 2e argument.")
-    loaded = []
-    for part in kit["parts"]:
-        tris = load_stl(os.path.join(src, part["file"]))
-        loaded.append((part, tris))
-        print(f"  {part['name']:<10} {len(tris):>8} triangles", flush=True)
+def snap_base(base_pos, others):
+    """Recale un socle modélisé ailleurs que la figurine : son dessus vient sous les
+    pattes (points les plus bas), centré sur elles."""
+    pts = np.concatenate(others)
+    low = pts[pts[:, 2] < pts[:, 2].min() + 3.0]
+    lo, hi = base_pos.min(0), base_pos.max(0)
+    shift = np.array([low[:, 0].mean() - (lo[0] + hi[0]) / 2,
+                      low[:, 1].mean() - (lo[1] + hi[1]) / 2,
+                      pts[:, 2].min() - hi[2] + 0.5])
+    return base_pos + shift
 
-    # Repère : socle centré, posé au sol, diamètre FOOTPRINT cases.
-    base = next(t for p, t in loaded if p["material"] == "base").reshape(-1, 3)
+
+def _spheres(pos, faces, sign, radii=np.arange(0.6, 4.0, 0.1)):
+    """Repère les portions de sphère d'un maillage par vote : chaque sommet vote pour le
+    centre situé à r le long de sa normale (sign=-1 : boules, +1 : creux).
+    Retourne [(rayon, centre)] des sphères nettes, distinctes, de la plus nette à la moins."""
+    normals = vertex_normals(pos, faces)
+    found = []
+    for r in radii:
+        c = pos + sign * r * normals
+        keys = np.floor(c / 0.15).astype(np.int64)
+        _, inv, cnt = np.unique(keys, axis=0, return_inverse=True, return_counts=True)
+        inv = inv.ravel()
+        for i in np.argsort(-cnt)[:6]:
+            found.append((cnt[i] / (r * r), r, c[inv == i].mean(0)))
+    found.sort(key=lambda t: -t[0])
+    best = found[0][0]
+    out = []
+    for score, r, c in found:
+        if score < 0.3 * best:
+            break
+        if all(np.linalg.norm(c - c2) > 2.0 for _, c2 in out):
+            out.append((r, c))
+    return out
+
+
+def fit_balljoint(part_pos, part_faces, other_pos, other_faces):
+    """Arme à rotule : les boules du poignet (dans la pièce) vont dans les creux du bout
+    des bras (dans le reste de la figurine). Le fichier de l'arme ne la place pas
+    forcément au bon endroit ; on la déplace (sans la tourner) pour que ses boules
+    tombent dans des creux de même rayon. Retourne les positions recalées."""
+    balls = _spheres(part_pos, part_faces, -1.0)[:2]
+    sockets = _spheres(other_pos, other_faces, +1.0)
+    best = None
+    for rb, cb in balls:
+        for rs, cs in sockets:
+            if abs(rb - rs) > 0.25:
+                continue
+            shift = cs - cb
+            # Toutes les boules doivent tomber dans un creux avec ce même décalage.
+            err = max(min(np.linalg.norm(c + shift - s2) for _, s2 in sockets) for _, c in balls)
+            if best is None or err < best[0]:
+                best = (err, shift)
+    if best is None or best[0] > 0.5:
+        print("  (rotule : pas d'emboîtement trouvé, pièce laissée en place)", flush=True)
+        return part_pos
+    print(f"  rotule : pièce déplacée de {np.round(best[1], 2)} mm (écart {best[0]:.2f} mm)", flush=True)
+    return part_pos + best[1]
+
+
+def build_variant(kit, name, originals):
+    parts_by_id = {p["id"]: p for p in kit["parts"]}
+    parts = [parts_by_id[i] for i in kit["variants"][name]]
+    footprint = kit.get("footprint", 0.85)
+    originals = dict(originals)
+    for p in parts:
+        if p.get("snap_under"):
+            others = [originals[q["id"]][0] for q in parts if q is not p]
+            originals[p["id"]] = (snap_base(originals[p["id"]][0], others), originals[p["id"]][1])
+        if p.get("fit_balljoint"):
+            rest = [originals[q["id"]] for q in parts if q is not p and q["material"] != "base"]
+            offs = np.cumsum([0] + [len(r[0]) for r in rest])
+            other_pos = np.concatenate([r[0] for r in rest])
+            other_faces = np.concatenate([r[1] + o for r, o in zip(rest, offs[:-1])])
+            originals[p["id"]] = (fit_balljoint(*originals[p["id"]], other_pos, other_faces),
+                                  originals[p["id"]][1])
+
+    # Repère : socle centré, posé au sol, diamètre [footprint] cases.
+    base = next(originals[p["id"]][0] for p in parts if p["material"] == "base")
     lo, hi = base.min(0), base.max(0)
     center = np.array([(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, lo[2]])
-    scale = FOOTPRINT / max(hi[0] - lo[0], hi[1] - lo[1])
+    scale = footprint / max(hi[0] - lo[0], hi[1] - lo[1])
     # STL (x, y, z), Z en haut -> Godot (-x, z, y) : rotation, pas de miroir. La tête
     # (vers -y dans le STL) regarde vers -Z, l'avant d'un nœud Godot.
     axes = np.array([[-1.0, 0, 0], [0, 0, 1.0], [0, 1.0, 0]])
 
-    out_parts = []
-    total = 0
-    for part, tris in loaded:
-        pos, faces = simplify(tris, part["triangles"])
+    simplified = []
+    for part, target in zip(parts, budgets(parts, originals, kit["triangles"])):
+        pos, faces = simplify(*originals[part["id"]], target)
         pos = ((pos - center) * scale) @ axes.T
-        out_parts.append((part["name"], part["material"], pos, vertex_normals(pos, faces), faces))
-        total += len(faces)
-    out = os.path.join(REPO_ROOT, kit["output"])
+        simplified.append((part, pos, faces))
+
+    # Lavis calculé sur la figurine entière, puis redécoupé par pièce.
+    offsets = np.cumsum([0] + [len(s[1]) for s in simplified])
+    all_pos = np.concatenate([s[1] for s in simplified])
+    all_faces = np.concatenate([s[2] + o for s, o in zip(simplified, offsets[:-1])])
+    all_nrm = vertex_normals(all_pos, all_faces)
+    shade = wash(all_pos, all_faces, all_nrm)
+
+    out_parts = []
+    for (part, pos, faces), o0, o1 in zip(simplified, offsets[:-1], offsets[1:]):
+        out_parts.append((part["name"], part["material"], pos, all_nrm[o0:o1], shade[o0:o1], faces))
+    out = os.path.join(REPO_ROOT, kit["output_dir"], name + ".glb")
     os.makedirs(os.path.dirname(out), exist_ok=True)
     write_glb(out, out_parts)
-    allpos = np.concatenate([p[2] for p in out_parts])
-    print(f"-> {out} : {total} triangles, hauteur {np.ptp(allpos[:, 1]):.2f} case(s), "
-          f"{os.path.getsize(out) / 1e6:.1f} Mo")
+    print(f"-> {out} : {len(all_faces)} triangles, hauteur {np.ptp(all_pos[:, 1]):.2f} case(s), "
+          f"{os.path.getsize(out) / 1e6:.1f} Mo", flush=True)
+
+
+def main(kit_path, source=None, only=None):
+    with open(kit_path, encoding="utf-8") as f:
+        kit = json.load(f)
+    src = source if source and source != "-" else kit["source"]
+    if not os.path.isdir(src):
+        sys.exit(f"Dossier des STL introuvable : {src}. Passe le bon dossier en 2e argument.")
+    names = only or list(kit["variants"])
+    needed = {i for n in names for i in kit["variants"][n]}
+    originals = {}
+    for part in kit["parts"]:
+        if part["id"] in needed:
+            t = time.time()
+            originals[part["id"]] = load_part(os.path.join(src, part["file"]))
+            print(f"  {part['id']:<14} {len(originals[part['id']][1]):>8} triangles "
+                  f"({time.time() - t:.0f} s)", flush=True)
+    for name in names:
+        build_variant(kit, name, originals)
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else None)
+    main(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else None, sys.argv[3:] or None)

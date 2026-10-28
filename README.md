@@ -52,11 +52,12 @@ bash tests.sh
 ### 3. Regénérer les figurines
 
 Les modèles des dragons ne sont **pas dans git** (licence Artisan Guild, voir `CLAUDE.md`).
-On les reconstruit depuis les STL du Google Drive, une commande par kit :
+On les reconstruit depuis les STL du Google Drive (dans `Figurines/Dragons/`), une
+commande par kit :
 
 ```sh
-python tools/assembler_figurine.py tools/kits/dragon_a_spear_rider.json
-python tools/assembler_figurine.py tools/kits/dragon_a_wild.json
+pip install numpy pymeshlab
+for k in tools/kits/*.json; do python tools/assembler_figurine.py "$k"; done
 ```
 
 Si le Drive n'est pas sur `I:`, ajouter le dossier des STL en 2e argument
