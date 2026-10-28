@@ -13,4 +13,4 @@ damage = 3
 attack_range = 1
 move_directions = Array[StringName]([])
 can_jump = true
-model_path = "res://assets/models/draconian/dragon_a_spear_rider.glb"
+model_path = "res://Figurines/Dragons/dragon_a_lancier.glb"

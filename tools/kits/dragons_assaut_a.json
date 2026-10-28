@@ -1,0 +1,89 @@
+{
+  "source": "I:/Mon Drive/3D/Miniatures/Artisan guild/myairbridge-50 Draconian Scourge - June 2023 AG/50 Draconian Scourge - June 2023 AG/Assalut Dragons & Dragonraiders/Assalut Dragon & Dragonrider A",
+  "output_dir": "Figurines/Dragons",
+  "triangles": 350000,
+  "footprint": 0.85,
+  "parts": [
+    {
+      "id": "base",
+      "name": "base",
+      "file": "Base_Dragon_A.stl",
+      "material": "base"
+    },
+    {
+      "id": "wing_l",
+      "name": "wing_l",
+      "file": "Dragon_A_Wing_L (Fixed).stl",
+      "material": "wings",
+      "weight": 1.5
+    },
+    {
+      "id": "wing_r",
+      "name": "wing_r",
+      "file": "Dragon_A_Wing_R (Fixed).stl",
+      "material": "wings",
+      "weight": 1.5
+    },
+    {
+      "id": "body_wild",
+      "name": "body",
+      "file": "Kit II (Wild Dragon)/Assault_Dragon_A.stl",
+      "material": "scales"
+    },
+    {
+      "id": "head_wild",
+      "name": "head",
+      "file": "Kit II (Wild Dragon)/Dragon_A_Head.stl",
+      "material": "scales"
+    },
+    {
+      "id": "body_armored",
+      "name": "body",
+      "file": "Kit II (Spear Dragonrider)/Assault_Dragon_A_(Armored).stl",
+      "material": "scales"
+    },
+    {
+      "id": "head_saddle",
+      "name": "head",
+      "file": "Kit II (Spear Dragonrider)/Dragon_A_Head_(Saddle).stl",
+      "material": "scales"
+    },
+    {
+      "id": "rider",
+      "name": "rider",
+      "file": "Kit II (Spear Dragonrider)/Draconian_Dragonrider_A.stl",
+      "material": "rider"
+    },
+    {
+      "id": "spear",
+      "name": "spear",
+      "file": "Kit II (Spear Dragonrider)/Draconian_Spear_L+R.stl",
+      "material": "weapon"
+    }
+  ],
+  "variants": {
+    "dragon_a_sauvage": [
+      "base",
+      "wing_l",
+      "wing_r",
+      "body_wild",
+      "head_wild"
+    ],
+    "dragon_a_harnache": [
+      "base",
+      "wing_l",
+      "wing_r",
+      "body_armored",
+      "head_saddle"
+    ],
+    "dragon_a_lancier": [
+      "base",
+      "wing_l",
+      "wing_r",
+      "body_armored",
+      "head_saddle",
+      "rider",
+      "spear"
+    ]
+  }
+}

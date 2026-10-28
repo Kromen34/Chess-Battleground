@@ -22,3 +22,7 @@ tools/bin/
 # Figurines Artisan Guild : jamais dans git (dépôt public) tant que la licence
 # jeu vidéo n'est pas confirmée par écrit.
 assets/models/draconian/
+Figurines/
+
+# Python
+__pycache__/

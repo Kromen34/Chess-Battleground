@@ -1,0 +1,97 @@
+{
+  "source": "I:/Mon Drive/3D/Miniatures/Artisan guild/myairbridge-50 Draconian Scourge - June 2023 AG/50 Draconian Scourge - June 2023 AG/Assalut Dragons & Dragonraiders/Assalut Dragon & Dragonrider B",
+  "output_dir": "Figurines/Dragons",
+  "triangles": 350000,
+  "footprint": 0.85,
+  "parts": [
+    {
+      "id": "base",
+      "name": "base",
+      "file": "Base_Dragon_B.stl",
+      "material": "base",
+      "snap_under": true
+    },
+    {
+      "id": "wing_l",
+      "name": "wing_l",
+      "file": "Dragon_B_Wing_L.stl",
+      "material": "wings",
+      "weight": 1.5
+    },
+    {
+      "id": "wing_r",
+      "name": "wing_r",
+      "file": "Dragon_B_Wing_R.stl",
+      "material": "wings",
+      "weight": 1.5
+    },
+    {
+      "id": "body_wild",
+      "name": "body",
+      "file": "Kit II (Wild Dragon)/Assault_Dragon_B.stl",
+      "material": "scales"
+    },
+    {
+      "id": "head_wild",
+      "name": "head",
+      "file": "Kit II (Wild Dragon)/Dragon_Head_B.stl",
+      "material": "scales"
+    },
+    {
+      "id": "body_armored",
+      "name": "body",
+      "file": "Kit I (Swordman Dragonrider)/Assault_Dragon_B_(Armored).stl",
+      "material": "scales"
+    },
+    {
+      "id": "head_saddle",
+      "name": "head",
+      "file": "Kit I (Swordman Dragonrider)/Dragon_Head_B_(Saddle).stl",
+      "material": "scales"
+    },
+    {
+      "id": "rider",
+      "name": "rider",
+      "file": "Kit I (Swordman Dragonrider)/Draconian_Dragonrider_B.stl",
+      "material": "rider"
+    },
+    {
+      "id": "sword",
+      "name": "sword",
+      "file": "Kit I (Swordman Dragonrider)/Draconian_Pointing_Sword_R.stl",
+      "material": "weapon"
+    },
+    {
+      "id": "shield",
+      "name": "shield",
+      "file": "Kit I (Swordman Dragonrider)/Draconian_Shield_L.stl",
+      "material": "armor"
+    }
+  ],
+  "variants": {
+    "dragon_b_sauvage": [
+      "base",
+      "wing_l",
+      "wing_r",
+      "body_wild",
+      "head_wild"
+    ],
+    "dragon_b_harnache": [
+      "base",
+      "wing_l",
+      "wing_r",
+      "body_armored",
+      "head_saddle"
+    ],
+    "dragon_b_epeiste": [
+      "base",
+      "wing_l",
+      "wing_r",
+      "body_armored",
+      "head_saddle",
+      "rider",
+      "sword",
+      "shield"
+    ]
+  }
+}

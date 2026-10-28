@@ -1,0 +1,103 @@
+{
+  "source": "I:/Mon Drive/3D/Miniatures/Artisan guild/myairbridge-50 Draconian Scourge - June 2023 AG/50 Draconian Scourge - June 2023 AG/Assalut Dragons & Dragonraiders/Assault Dragon & Dragonrider C",
+  "output_dir": "Figurines/Dragons",
+  "triangles": 350000,
+  "footprint": 0.85,
+  "parts": [
+    {
+      "id": "base",
+      "name": "base",
+      "file": "Base_Dragon_C.stl",
+      "material": "base"
+    },
+    {
+      "id": "wing_l",
+      "name": "wing_l",
+      "file": "Dragon_Wing_L (Fixed).stl",
+      "material": "wings",
+      "weight": 1.5
+    },
+    {
+      "id": "wing_r",
+      "name": "wing_r",
+      "file": "Dragon_Wing_R (Fixed).stl",
+      "material": "wings",
+      "weight": 1.5
+    },
+    {
+      "id": "body_wild",
+      "name": "body",
+      "file": "Kit II (Wild Dragon)/Assault_Dragon_C (Fixed).stl",
+      "material": "scales"
+    },
+    {
+      "id": "head_wild",
+      "name": "head",
+      "file": "Kit II (Wild Dragon)/Dragon_Head_C.stl",
+      "material": "scales"
+    },
+    {
+      "id": "body_armored",
+      "name": "body",
+      "file": "Kit I (Bolter Dragonrider)/Assault_Dragon_C_(Arm) (Fixed).stl",
+      "material": "scales"
+    },
+    {
+      "id": "head_saddle",
+      "name": "head",
+      "file": "Kit I (Bolter Dragonrider)/Dragon_Head_C_(Saddle).stl",
+      "material": "scales"
+    },
+    {
+      "id": "rider",
+      "name": "rider",
+      "file": "Kit I (Bolter Dragonrider)/Draconian_Dragonrider_C.stl",
+      "material": "rider"
+    },
+    {
+      "id": "bolter",
+      "name": "bolter",
+      "file": "Kit I (Bolter Dragonrider)/Draconian_Heavy_Bolter_R.stl",
+      "material": "weapon"
+    },
+    {
+      "id": "hand_l",
+      "name": "hand_l",
+      "file": "Kit I (Bolter Dragonrider)/Draconian_Holding_Hand_L.stl",
+      "material": "rider"
+    },
+    {
+      "id": "quiver",
+      "name": "quiver",
+      "file": "Kit I (Bolter Dragonrider)/Draconian_Quiver.stl",
+      "material": "leather"
+    }
+  ],
+  "variants": {
+    "dragon_c_sauvage": [
+      "base",
+      "wing_l",
+      "wing_r",
+      "body_wild",
+      "head_wild"
+    ],
+    "dragon_c_harnache": [
+      "base",
+      "wing_l",
+      "wing_r",
+      "body_armored",
+      "head_saddle"
+    ],
+    "dragon_c_arbaletrier": [
+      "base",
+      "wing_l",
+      "wing_r",
+      "body_armored",
+      "head_saddle",
+      "rider",
+      "bolter",
+      "hand_l",
+      "quiver"
+    ]
+  }
+}
