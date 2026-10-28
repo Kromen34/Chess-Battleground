@@ -34,6 +34,9 @@ court et à jour : si tu changes une convention, mets-la à jour ici.
 - Figurines : les 14 variantes de dragons Artisan Guild (kits d'assaut A à D sauvage /
   harnaché / monté, Azgrathok 1 ou 5 têtes) dans `Figurines/Dragons/`, détaillées
   (350-500k triangles, LOD Godot) avec lavis des creux. Nicolas trie celles qu'il garde.
+- Les 23 variantes de draconiens dans `Figurines/Draconiens/` (Shock Troops A à F ailé /
+  sans ailes, Commander Drakvarr, Flamagath Blackflame, Onixia), 300-400k triangles.
+  Toutes les figurines du pack Draconian Scourge sont faites (37 en tout).
 - Galerie des figurines (`scenes/figurine_gallery.tscn`, bouton du menu) : ← → pour changer,
   clic enfoncé pour tourner, molette pour zoomer. Liste tous les .glb de `res://Figurines/*/`.
 - Tests : 53 tests verts (`./tests.sh`).
@@ -80,7 +83,7 @@ demande de licence jeu vidéo à Artisan Guild.
   ambiante (GPU) sur la figurine entière + creux fins assombris, arêtes éclaircies.
 - Un fichier par kit dans `tools/kits/` : pièces (fichier, matériau, `weight` = part de
   triangles en plus, ex. ailes) et variantes (liste de pièces) -> un GLB par variante dans
-  `Figurines/Dragons/`. Kits B et D : socle modélisé ailleurs, `"snap_under": true` le recale
+  `Figurines/<output_dir>/` (Dragons, Draconiens). Dragons B et D : socle modélisé ailleurs, `"snap_under": true` le recale
   sous les pattes (vérifier les socles au rendu pour tout nouveau kit).
 - Matériaux : couleurs unies (un STL n'a pas de textures) multipliées par le lavis. Le nœud
   `base` du GLB prend la couleur de l'équipe dans `BoardView` (en gardant le lavis).

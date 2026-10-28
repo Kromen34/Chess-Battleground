@@ -1,0 +1,76 @@
+{
+  "source": "I:/Mon Drive/3D/Miniatures/Artisan guild/myairbridge-50 Draconian Scourge - June 2023 AG/50 Draconian Scourge - June 2023 AG/Flamagath Blackflame - OK",
+  "output_dir": "Figurines/Draconiens",
+  "triangles": 400000,
+  "footprint": 0.85,
+  "parts": [
+    {
+      "id": "base",
+      "name": "base",
+      "file": "Base_Flamagath.stl",
+      "material": "base"
+    },
+    {
+      "id": "body_wings",
+      "name": "body",
+      "file": "Flamagath_Blackflame.stl",
+      "material": "scales"
+    },
+    {
+      "id": "body_nowings",
+      "name": "body",
+      "file": "Flamagath_Blackflame_(Wingless).stl",
+      "material": "scales"
+    },
+    {
+      "id": "hand_l",
+      "name": "hand_l",
+      "file": "Flamagath_Hand_L.stl",
+      "material": "scales"
+    },
+    {
+      "id": "hand_r",
+      "name": "hand_r",
+      "file": "Flamagath_Hand_R.stl",
+      "material": "scales"
+    },
+    {
+      "id": "cast_l",
+      "name": "hand_l",
+      "file": "Draconian_Casting_Hand_Epty_L.stl",
+      "material": "scales"
+    },
+    {
+      "id": "cast_r",
+      "name": "hand_r",
+      "file": "Draconian_Casting_Hand_Epty_R.stl",
+      "material": "scales"
+    }
+  ],
+  "variants": {
+    "flamagath_aile": [
+      "base",
+      "body_wings",
+      "hand_l",
+      "hand_r"
+    ],
+    "flamagath_aile_mains_nues": [
+      "base",
+      "body_wings",
+      "cast_l",
+      "cast_r"
+    ],
+    "flamagath": [
+      "base",
+      "body_nowings",
+      "hand_l",
+      "hand_r"
+    ],
+    "flamagath_mains_nues": [
+      "base",
+      "body_nowings",
+      "cast_l",
+      "cast_r"
+    ]
+  }
+}

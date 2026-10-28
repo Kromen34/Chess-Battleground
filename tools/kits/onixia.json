@@ -1,0 +1,64 @@
+{
+  "source": "I:/Mon Drive/3D/Miniatures/Artisan guild/myairbridge-50 Draconian Scourge - June 2023 AG/50 Draconian Scourge - June 2023 AG/Onixia the Tempest - OK",
+  "output_dir": "Figurines/Draconiens",
+  "triangles": 400000,
+  "footprint": 0.85,
+  "parts": [
+    {
+      "id": "base",
+      "name": "base",
+      "file": "Base_Onixia (Fixed).stl",
+      "material": "base"
+    },
+    {
+      "id": "body",
+      "name": "body",
+      "file": "Onixia_the_Tempest (Fixed).stl",
+      "material": "scales"
+    },
+    {
+      "id": "body_skimpy",
+      "name": "body",
+      "file": "Onixia_the_Tempest_(Skimpy_Version) (Fixed).stl",
+      "material": "scales"
+    },
+    {
+      "id": "body_alt",
+      "name": "body",
+      "file": "Alt Version (No Breast)/Onixia_the_Tempest_(Alt_Version) (Fixed).stl",
+      "material": "scales"
+    },
+    {
+      "id": "sword",
+      "name": "sword",
+      "file": "Onixia_Sword_R.stl",
+      "material": "weapon"
+    },
+    {
+      "id": "spell",
+      "name": "spell",
+      "file": "Onixia_Thunderspell_L.stl",
+      "material": "scales"
+    }
+  ],
+  "variants": {
+    "onixia": [
+      "base",
+      "body",
+      "sword",
+      "spell"
+    ],
+    "onixia_skimpy": [
+      "base",
+      "body_skimpy",
+      "sword",
+      "spell"
+    ],
+    "onixia_alt": [
+      "base",
+      "body_alt",
+      "sword",
+      "spell"
+    ]
+  }
+}

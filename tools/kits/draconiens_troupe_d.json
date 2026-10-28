@@ -1,0 +1,64 @@
+{
+  "source": "I:/Mon Drive/3D/Miniatures/Artisan guild/myairbridge-50 Draconian Scourge - June 2023 AG/50 Draconian Scourge - June 2023 AG/Draconian Shock Troops/Draconian Shock Troop D - OK",
+  "output_dir": "Figurines/Draconiens",
+  "triangles": 300000,
+  "footprint": 0.85,
+  "parts": [
+    {
+      "id": "base",
+      "name": "base",
+      "file": "Base_Draconian_D.stl",
+      "material": "base"
+    },
+    {
+      "id": "body1",
+      "name": "body",
+      "file": "Kit I (Winged Swordman)/Draconian_Shock_Troop_D_(Winged) (Fixed).stl",
+      "material": "scales"
+    },
+    {
+      "id": "k1_pointing_sword_r",
+      "name": "pointing_sword_r",
+      "file": "Kit I (Winged Swordman)/Draconian_Pointing_Sword_R.stl",
+      "material": "weapon"
+    },
+    {
+      "id": "k1_shield_l",
+      "name": "shield_l",
+      "file": "Kit I (Winged Swordman)/Draconian_Shield_L.stl",
+      "material": "armor"
+    },
+    {
+      "id": "body2",
+      "name": "body",
+      "file": "Kit II (Wingless Gladiator)/Draconian_Shock_Troop_D_(Wingless) (Fixed).stl",
+      "material": "scales"
+    },
+    {
+      "id": "k2_axe_l",
+      "name": "axe_l",
+      "file": "Kit II (Wingless Gladiator)/Draconian_Axe_L.stl",
+      "material": "weapon"
+    },
+    {
+      "id": "k2_axe_r",
+      "name": "axe_r",
+      "file": "Kit II (Wingless Gladiator)/Draconian_Axe_R.stl",
+      "material": "weapon"
+    }
+  ],
+  "variants": {
+    "draconien_d_epeiste_aile": [
+      "base",
+      "body1",
+      "k1_pointing_sword_r",
+      "k1_shield_l"
+    ],
+    "draconien_d_gladiateur": [
+      "base",
+      "body2",
+      "k2_axe_l",
+      "k2_axe_r"
+    ]
+  }
+}

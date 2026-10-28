@@ -1,0 +1,71 @@
+{
+  "source": "I:/Mon Drive/3D/Miniatures/Artisan guild/myairbridge-50 Draconian Scourge - June 2023 AG/50 Draconian Scourge - June 2023 AG/Draconian Shock Troops/Draconian Shock Troop C",
+  "output_dir": "Figurines/Draconiens",
+  "triangles": 300000,
+  "footprint": 0.85,
+  "parts": [
+    {
+      "id": "base",
+      "name": "base",
+      "file": "Base_Draconian_C.stl",
+      "material": "base"
+    },
+    {
+      "id": "body1",
+      "name": "body",
+      "file": "Kit I (Winged Bolter)/Draconian_Shock_Troop_C_(Winged).stl",
+      "material": "scales"
+    },
+    {
+      "id": "k1_heavy_bolter_r",
+      "name": "heavy_bolter_r",
+      "file": "Kit I (Winged Bolter)/Draconian_Heavy_Bolter_R.stl",
+      "material": "weapon"
+    },
+    {
+      "id": "k1_holding_hand_l",
+      "name": "holding_hand_l",
+      "file": "Kit I (Winged Bolter)/Draconian_Holding_Hand_L.stl",
+      "material": "scales"
+    },
+    {
+      "id": "k1_quiver",
+      "name": "quiver",
+      "file": "Kit I (Winged Bolter)/Draconian_Quiver.stl",
+      "material": "leather"
+    },
+    {
+      "id": "body2",
+      "name": "body",
+      "file": "Kit II (Wingless Spellblade)/Draconian_Shock_Troop_C_(Wingless).stl",
+      "material": "scales"
+    },
+    {
+      "id": "k2_fire_hand_l",
+      "name": "fire_hand_l",
+      "file": "Kit II (Wingless Spellblade)/Draconian_Fire_Hand_L.stl",
+      "material": "scales"
+    },
+    {
+      "id": "k2_pointing_sword_r",
+      "name": "pointing_sword_r",
+      "file": "Kit II (Wingless Spellblade)/Draconian_Pointing_Sword_R.stl",
+      "material": "weapon"
+    }
+  ],
+  "variants": {
+    "draconien_c_arbaletrier_aile": [
+      "base",
+      "body1",
+      "k1_heavy_bolter_r",
+      "k1_holding_hand_l",
+      "k1_quiver"
+    ],
+    "draconien_c_lame_sorciere": [
+      "base",
+      "body2",
+      "k2_fire_hand_l",
+      "k2_pointing_sword_r"
+    ]
+  }
+}
