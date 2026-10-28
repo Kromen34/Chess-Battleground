@@ -41,15 +41,7 @@ git config user.name "Rips Nico"
 git config user.email "kromen34@hotmail.com"
 ```
 
-Le travail récent est sur deux branches, pas encore fusionnées dans `main` :
-
-| Branche | Contenu | PR |
-|---|---|---|
-| `feat/serveur-dedie` | Serveur dédié, jeu contre l'IA en ligne, déploiement sur le VPS | #6 |
-| `feat/decor-plateau` | Table de salon, caméra à la souris, menu Options, dragons | #7 |
-
-Pour reprendre le travail visuel : `git checkout feat/decor-plateau`.
-Le plus simple est de fusionner les deux PR sur GitHub, puis de rester sur `main`.
+Tout le travail est sur `main` (serveur dédié et décor fusionnés le 28/10/2026).
 
 ### 2. Vérifier que tout marche
 
@@ -102,7 +94,7 @@ Host chessbg
     IdentitiesOnly yes
 ```
 
-Test : `ssh chessbg`. Déploiement : `bash tools/deployer_serveur.sh` (branche `feat/serveur-dedie`).
+Test : `ssh chessbg`. Déploiement : `bash tools/deployer_serveur.sh`.
 
 ### 6. Avec Claude Code
 

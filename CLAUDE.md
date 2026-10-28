@@ -14,7 +14,7 @@ court et à jour : si tu changes une convention, mets-la à jour ici.
 
 **Fait :**
 - Cœur du jeu : plateau-graphe 8×8, 4 figurines provisoires, règles, IA de référence,
-  scène 3D placeholder (`scenes/main.tscn`). 32 tests verts.
+  scène 3D placeholder (`scenes/main.tscn`).
 - Menu principal (`scenes/main_menu.tscn`, scène de démarrage) : « Jouer contre l'IA »,
   « Quitter », pseudo + avatar Steam en haut à droite (validé : ça marche). Échap en partie → menu.
 - Projet renommé **Chess Battleground** (ex-TD Battleground), dépôt `Kromen34/Chess-Battleground`.
@@ -32,7 +32,7 @@ court et à jour : si tu changes une convention, mets-la à jour ici.
   plateau sont pris au **relâchement** (un glisser de caméra avale le relâchement).
 - Menu Options graphiques (`src/ui/options_menu.gd` + autoload `GraphicsSettings`).
 - Premières figurines : dragons Artisan Guild (voir « Figurines »).
-- Tests : NN_TESTS tests verts (`./tests.sh`).
+- Tests : 53 tests verts (`./tests.sh`).
 
 **Prochaines étapes du serveur :** authentification par ticket de session Steam, PostgreSQL
 (joueurs, decks, points), stats des figurines servies par le serveur.
