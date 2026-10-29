@@ -1,8 +1,11 @@
 extends Node3D
 ## Galerie des figurines : une figurine à la fois sur un présentoir.
+## - panneau de gauche ou flèches haut / bas : famille (un dossier de Figurines/, avec ses sous-dossiers) ;
 ## - flèches gauche / droite (ou boutons à l'écran) : figurine précédente / suivante ;
 ## - clic gauche ou droit enfoncé : tourner autour (et monter / descendre) ;
-## - molette : zoom ; clic molette : vue de départ ; Échap : menu.
+## - molette : zoom ; clic molette : vue de départ ; Échap : menu ;
+## - Suppr (ou bouton) : mettre la figurine de côté, dans <famille>/En attente/ (le fichier est
+##   déplacé, pas effacé) ; la case « Voir les figurines en attente » permet de les remettre.
 ## Les modèles viennent des sous-dossiers de res://Figurines/ (absents de git, voir CLAUDE.md).
 
 const MENU_SCENE := "res://scenes/main_menu.tscn"
@@ -14,7 +17,20 @@ const PITCH_MIN := -10.0
 const PITCH_MAX := 80.0
 const START_YAW := 0.0
 const START_PITCH := 18.0
+const FAMILY_PANEL_WIDTH := 260.0
+## Famille des .glb posés directement dans Figurines/, hors sous-dossier.
+const LOOSE_FAMILY := "Divers"
+## Dossier des figurines mises de côté, dans chaque famille : la galerie ne les montre plus.
+const ON_HOLD_DIR := "En attente"
 
+## Familles -> chemins de leurs modèles, et famille affichée.
+var _families: Dictionary = {}
+var _family_names: PackedStringArray = []
+var _family: int = 0
+var _family_list: ItemList
+## true : on parcourt les figurines en attente (pour les remettre) au lieu des autres.
+var _on_hold: bool = false
+var _hold_button: Button
 var _paths: PackedStringArray = []
 var _index: int = 0
 var _model: Node3D = null
@@ -37,8 +53,18 @@ var _max_distance: float = 10.0
 func _ready() -> void:
 	_build_stage()
 	_build_ui()
-	_paths = list_models(FIGURINES_DIR)
-	_show(0)
+	_reload()
+
+
+## Relit les dossiers et reste sur la famille [family] et la figurine [index] si possible.
+func _reload(family: String = "", index: int = 0) -> void:
+	_families = group_by_family(list_models(FIGURINES_DIR, _on_hold), FIGURINES_DIR)
+	_family_names = PackedStringArray(_families.keys())
+	_family_list.clear()
+	for f in _family_names:
+		_family_list.add_item("%s  (%d)" % [f, (_families[f] as PackedStringArray).size()])
+	_hold_button.text = "Remettre dans la galerie (Suppr)" if _on_hold else "Mettre de côté (Suppr)"
+	_select_family(maxi(0, _family_names.find(family)), index)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -48,6 +74,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		_show(_index - 1)
 	elif event.is_action_pressed("ui_right"):
 		_show(_index + 1)
+	elif event.is_action_pressed("ui_up"):
+		_select_family(_family - 1)
+	elif event.is_action_pressed("ui_down"):
+		_select_family(_family + 1)
+	elif event is InputEventKey and (event as InputEventKey).pressed 			and not (event as InputEventKey).echo and (event as InputEventKey).keycode == KEY_DELETE and _hold_button.visible:
+		_toggle_hold()
 	elif event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
 		if mb.pressed and mb.button_index == MOUSE_BUTTON_WHEEL_UP:
@@ -83,6 +115,47 @@ func _reset_view() -> void:
 	_target_pitch = START_PITCH
 	_target_distance = _home_distance
 	_yaw = wrapf(_yaw, -PI, PI)
+
+
+## Passe à la famille [i] (la liste boucle) et affiche sa figurine [index].
+func _select_family(i: int, index: int = 0) -> void:
+	if _family_names.is_empty():
+		_paths = []
+	else:
+		_family = posmod(i, _family_names.size())
+		_paths = _families[_family_names[_family]]
+		_family_list.select(_family)
+		_family_list.ensure_current_is_visible()
+	_show(index)
+
+
+## Met la figurine affichée de côté (ou la remet, en vue « en attente ») en déplaçant son
+## .glb et son .import ; la suivante prend sa place.
+func _toggle_hold() -> void:
+	if _paths.is_empty():
+		return
+	var path := _paths[_index]
+	var dest := restored_path(path) if _on_hold else on_hold_path(path, FIGURINES_DIR)
+	var err := move_model(path, dest)
+	if err != OK:
+		_count_label.text = "Déplacement impossible (%s)" % error_string(err)
+		return
+	_reload(_family_names[_family], _index)
+
+
+## Déplace un modèle (et son .import, pour qu'il reste chargeable sans réimport) vers [dest].
+static func move_model(path: String, dest: String) -> Error:
+	var err := DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(dest.get_base_dir()))
+	if err != OK:
+		return err
+	for ext in ["", ".import"]:
+		if not FileAccess.file_exists(path + ext):
+			continue
+		err = DirAccess.rename_absolute(ProjectSettings.globalize_path(path + ext),
+				ProjectSettings.globalize_path(dest + ext))
+		if err != OK:
+			return err
+	return OK
 
 
 ## Affiche la figurine [i] (la liste boucle) et cadre la caméra dessus.
@@ -131,21 +204,64 @@ func _model_bounds(model: Node3D) -> AABB:
 	return box
 
 
-## Chemins des .glb sous [root] (un niveau de sous-dossiers : Dragons/, ...), triés.
+## Chemins des .glb sous [root] et tous ses sous-dossiers (Dragons/, Dragons/Draconiens/...), triés.
+## Les dossiers ON_HOLD_DIR sont écartés, ou au contraire seuls listés si [on_hold].
 ## Dans un jeu exporté, seuls les .glb.import restent : on les ramène au .glb.
-static func list_models(root: String) -> PackedStringArray:
+static func list_models(root: String, on_hold: bool = false) -> PackedStringArray:
 	var out: PackedStringArray = []
 	if not DirAccess.dir_exists_absolute(root):
 		return out
-	var dirs: PackedStringArray = [""]
-	dirs.append_array(DirAccess.get_directories_at(root))
-	for d in dirs:
-		var folder := root + (d + "/" if d != "" else "")
+	var folders: PackedStringArray = [root]
+	while not folders.is_empty():
+		var folder: String = folders[folders.size() - 1]
+		folders.remove_at(folders.size() - 1)
+		for d in DirAccess.get_directories_at(folder):
+			folders.append(folder + d + "/")
+		var held := ("/%s/" % ON_HOLD_DIR) in folder.trim_prefix(root.get_base_dir())
+		if held != on_hold:
+			continue
 		for f in DirAccess.get_files_at(folder):
 			var file := f.trim_suffix(".import")
 			if file.get_extension() == "glb" and not out.has(folder + file):
 				out.append(folder + file)
 	out.sort()
+	return out
+
+
+## Où ranger un modèle mis de côté : <root>/<famille>/En attente/<fichier>.
+## « Dragons/Draconiens/onixia.glb » -> « Dragons/En attente/onixia.glb ».
+static func on_hold_path(path: String, root: String) -> String:
+	var rel := path.trim_prefix(root)
+	var family_dir := root if not rel.contains("/") else root + rel.get_slice("/", 0) + "/"
+	return family_dir + ON_HOLD_DIR + "/" + path.get_file()
+
+
+## Où remettre un modèle en attente : dans le dossier de la famille, à côté de En attente/.
+static func restored_path(path: String) -> String:
+	return path.get_base_dir().get_base_dir() + "/" + path.get_file()
+
+
+## Famille d'un modèle : le premier dossier sous [root] (« Dragons » pour
+## Dragons/Draconiens/onixia.glb), ou LOOSE_FAMILY pour un modèle posé dans [root].
+static func family_of(path: String, root: String) -> String:
+	var rel := path.trim_prefix(root)
+	return LOOSE_FAMILY if not rel.contains("/") else rel.get_slice("/", 0)
+
+
+## Regroupe les chemins par famille : { "Dragons": [...], ... }, familles triées.
+static func group_by_family(paths: PackedStringArray, root: String) -> Dictionary:
+	var by_family: Dictionary = {}
+	for p in paths:
+		var f := family_of(p, root)
+		# Un PackedStringArray est copié à la lecture : on réécrit la liste complétée.
+		var list: PackedStringArray = by_family.get(f, PackedStringArray())
+		list.append(p)
+		by_family[f] = list
+	var names: Array = by_family.keys()
+	names.sort()
+	var out: Dictionary = {}
+	for f: String in names:
+		out[f] = by_family[f]
 	return out
 
 
@@ -222,7 +338,9 @@ func _build_ui() -> void:
 	_count_label.modulate = Color(1, 1, 1, 0.7)
 	top.add_child(_count_label)
 
-	var prev := _arrow_button("◀", Control.PRESET_CENTER_LEFT, 24)
+	_build_family_panel(layer)
+
+	var prev := _arrow_button("◀", Control.PRESET_CENTER_LEFT, FAMILY_PANEL_WIDTH + 40)
 	prev.pressed.connect(func() -> void: _show(_index - 1))
 	layer.add_child(prev)
 	var next := _arrow_button("▶", Control.PRESET_CENTER_RIGHT, -24)
@@ -238,7 +356,7 @@ func _build_ui() -> void:
 	layer.add_child(back)
 
 	var help := Label.new()
-	help.text = "← → : figurine · clic enfoncé : tourner · molette : zoom · clic molette : vue de départ · Échap : menu"
+	help.text = "↑ ↓ : famille · ← → : figurine · Suppr : mettre de côté · clic enfoncé : tourner · molette : zoom · clic molette : vue de départ · Échap : menu"
 	help.add_theme_font_size_override("font_size", 16)
 	help.modulate = Color(1, 1, 1, 0.6)
 	help.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
@@ -246,6 +364,49 @@ func _build_ui() -> void:
 	help.offset_bottom = -20
 	help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	layer.add_child(help)
+
+
+## Panneau de gauche, sous « Retour au menu » : la liste des familles (défile s'il y en a beaucoup).
+func _build_family_panel(layer: CanvasLayer) -> void:
+	var panel := PanelContainer.new()
+	panel.anchor_bottom = 1.0
+	panel.offset_left = 16
+	panel.offset_top = 64
+	panel.offset_right = 16 + FAMILY_PANEL_WIDTH
+	panel.offset_bottom = -64
+	layer.add_child(panel)
+	var box := VBoxContainer.new()
+	panel.add_child(box)
+	var title := Label.new()
+	title.text = "Familles"
+	title.add_theme_font_size_override("font_size", 22)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	box.add_child(title)
+	_family_list = ItemList.new()
+	_family_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_family_list.add_theme_font_size_override("font_size", 18)
+	# Pas de focus clavier : les flèches restent à la galerie (↑ ↓ changent déjà de famille).
+	_family_list.focus_mode = Control.FOCUS_NONE
+	_family_list.item_selected.connect(func(i: int) -> void:
+		if i != _family:
+			_select_family(i))
+	box.add_child(_family_list)
+
+	var show_held := CheckButton.new()
+	show_held.text = "Voir les figurines en attente"
+	show_held.focus_mode = Control.FOCUS_NONE
+	show_held.toggled.connect(func(on: bool) -> void:
+		_on_hold = on
+		_reload(_family_names[_family] if not _family_names.is_empty() else ""))
+	box.add_child(show_held)
+	_hold_button = Button.new()
+	_hold_button.focus_mode = Control.FOCUS_NONE
+	_hold_button.add_theme_font_size_override("font_size", 18)
+	_hold_button.pressed.connect(_toggle_hold)
+	# Dans un jeu exporté, res:// est en lecture seule : le tri ne se fait qu'en local.
+	_hold_button.visible = not OS.has_feature("template")
+	show_held.visible = _hold_button.visible
+	box.add_child(_hold_button)
 
 
 func _arrow_button(text: String, preset: Control.LayoutPreset, x_offset: float) -> Button:

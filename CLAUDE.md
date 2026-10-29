@@ -34,18 +34,22 @@ court et à jour : si tu changes une convention, mets-la à jour ici.
 - Figurines : les 14 variantes de dragons Artisan Guild (kits d'assaut A à D sauvage /
   harnaché / monté, Azgrathok 1 ou 5 têtes) dans `Figurines/Dragons/`, détaillées
   (350-500k triangles, LOD Godot) avec lavis des creux. Nicolas trie celles qu'il garde.
-- Les 23 variantes de draconiens dans `Figurines/Draconiens/` (Shock Troops A à F ailé /
+- Les 23 variantes de draconiens, elles aussi dans `Figurines/Dragons/` (même famille) (Shock Troops A à F ailé /
   sans ailes, Commander Drakvarr, Flamagath Blackflame, Onixia), 300-400k triangles.
   Toutes les figurines du pack Draconian Scourge sont faites (37 en tout).
-- Galerie des figurines (`scenes/figurine_gallery.tscn`, bouton du menu) : ← → pour changer,
-  clic enfoncé pour tourner, molette pour zoomer. Liste tous les .glb de `res://Figurines/*/`.
+- Galerie des figurines (`scenes/figurine_gallery.tscn`, bouton du menu) : panneau des familles
+  à gauche (↑ ↓), ← → pour changer de figurine, clic enfoncé pour tourner, molette pour zoomer.
+  Une famille = un dossier de `res://Figurines/` (sous-dossiers compris) ; une nouvelle famille
+  = un nouveau dossier, rien à coder. Suppr / « Mettre de côté » déplace le .glb (et son .import)
+  dans `<famille>/En attente/`, que la galerie ignore (case « Voir les figurines en attente »
+  pour les remettre) : c'est le tri de Nicolas, rien n'est effacé. Désactivé dans un jeu exporté.
 - Steam (29/10, branche `feat/steampipe`, partie de `feat/details-figurines`, pas encore fusionnée) :
   Steam Direct payé, app **Chess Battleground 4303740**, package 1505054 (renommé), dépôt
   Windows 4303742. Première build envoyée avec `tools/envoyer_build_steam.sh` (BuildID
   26298844), mise en ligne sur la branche default. Jeu non publié (page du store non soumise).
   En cours : le client Steam n'installait rien (dépôt pas encore ajouté au package 1505054) ;
   vérifier que l'installation depuis la bibliothèque marche après l'ajout.
-- Tests : 56 tests verts (`./tests.sh`).
+- Tests : 61 tests verts (`./tests.sh`).
 
 **Prochaine étape choisie (reprise le 30/10) :** le **JcJ 1v1** sur le serveur, branche `feat/pvp` :
 mise en relation (file d'attente ou code de partie), `ServerMatch` avec deux joueurs humains au
@@ -106,7 +110,7 @@ demande de licence jeu vidéo à Artisan Guild.
   ambiante (GPU) sur la figurine entière + creux fins assombris, arêtes éclaircies.
 - Un fichier par kit dans `tools/kits/` : pièces (fichier, matériau, `weight` = part de
   triangles en plus, ex. ailes) et variantes (liste de pièces) -> un GLB par variante dans
-  `Figurines/<output_dir>/` (Dragons, Draconiens). Dragons B et D : socle modélisé ailleurs, `"snap_under": true` le recale
+  `Figurines/<output_dir>/` (dossier = famille dans la galerie : Dragons pour tout Draconian Scourge). Dragons B et D : socle modélisé ailleurs, `"snap_under": true` le recale
   sous les pattes (vérifier les socles au rendu pour tout nouveau kit).
   Armes à rotule (boule au poignet, creux au bout du bras) parfois mal placées dans leur
   fichier (lance du draconien A) : `"fit_balljoint": true` sur la pièce détecte boules et
