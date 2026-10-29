@@ -9,7 +9,7 @@
 set -euo pipefail
 
 APP_ID=4303740
-DEPOT_ID=4303741  # dépôt Windows de l'app, déclaré dans Steamworks (SteamPipe > Dépôts)
+DEPOT_ID=4303742  # dépôt Windows de l'app, déclaré dans Steamworks (SteamPipe > Dépôts)
 PRESET="Windows Desktop"
 GODOT_VERSION_DIR="4.3.stable"
 

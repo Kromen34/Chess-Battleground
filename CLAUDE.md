@@ -209,7 +209,7 @@ tools/            get_godot.sh, lancer_sans_gpu.bat, lancer_serveur.bat, deploye
   appelé à chaque frame par SteamService.
 - Envoyer une build : `bash tools/envoyer_build_steam.sh` (Git Bash, dans une vraie fenêtre :
   steamcmd demande mot de passe et Steam Guard). Exporte avec le preset « Windows Desktop »
-  (`export_presets.cfg`) dans `build/windows/`, puis SteamPipe vers le dépôt 4303741.
+  (`export_presets.cfg`) dans `build/windows/`, puis SteamPipe vers le dépôt 4303742.
   `--export` : exporte seulement. La mise en ligne (« Set build live ») se fait dans Steamworks.
   Tant que le jeu n'est pas sorti, seuls les comptes de l'organisation et les détenteurs de
   clés y ont accès. La build contient `Figurines/` : pas de clé à des tiers sans licence écrite.
