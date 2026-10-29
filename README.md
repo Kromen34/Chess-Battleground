@@ -110,7 +110,7 @@ conventions) au démarrage, rien d'autre à faire.
 - Règles (déplacement, attaque, fin de tour, victoire) centralisées dans `src/core/rules.gd`,
   tests headless (`./tests.sh`).
 - IA de référence (`src/ai/simple_ai.gd`) : une partie IA vs IA se termine et est déterministe.
-- Menu principal avec le pseudo et l'avatar Steam (GodotSteam 4.15, AppID de test 480).
+- Menu principal avec le pseudo et l'avatar Steam (GodotSteam 4.15, AppID 4303740).
 - Scène 3D : plateau posé sur une table de salon (soirée jeu de rôle), caméra à la souris.
   Clic figurine → sélection, clic case → déplacement, clic ennemi → attaque,
   Entrée → fin de tour, Échap → menu. L'IA joue le joueur 1.

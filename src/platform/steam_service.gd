@@ -9,7 +9,7 @@ extends Node
 signal profile_changed
 
 ## AppID Steam, lu dans le réglage du projet que GodotSteam utilise aussi.
-## 480 = Spacewar, l'app de test publique de Valve, en attendant le vrai AppID.
+## 4303740 = Chess Battleground. 480 (Spacewar, app de test de Valve) sert de repli.
 const APP_ID_SETTING := "steam/initialization/app_id"
 const DEFAULT_NAME := "Joueur"
 ## Constante Steam.AVATAR_LARGE (184×184).

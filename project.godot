@@ -18,7 +18,7 @@ GraphicsSettings="*res://src/platform/graphics_settings.gd"
 
 [steam]
 
-initialization/app_id=480
+initialization/app_id=4303740
 initialization/initialize_on_startup=false
 
 [debug]

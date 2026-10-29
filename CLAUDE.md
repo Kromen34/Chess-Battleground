@@ -147,7 +147,7 @@ scenes/           Scènes .tscn
 assets/           models/ (GLB), textures/, audio/ — tout en Git LFS
 tests/            run_tests.gd (runner) + test_*.gd
 tools/            get_godot.sh, lancer_sans_gpu.bat, lancer_serveur.bat, deployer_serveur.sh,
-                  assembler_figurine.py + kits/, rendu_figurine.gd
+                  assembler_figurine.py + kits/, rendu_figurine.gd, envoyer_build_steam.sh
 ```
 
 ## Règles d'architecture (non négociables)
@@ -203,9 +203,16 @@ tools/            get_godot.sh, lancer_sans_gpu.bat, lancer_serveur.bat, deploye
 - Ne jamais référencer la classe `Steam` directement : passer par `SteamService`, qui utilise
   `Engine.get_singleton("Steam")`. Le jeu et les tests doivent tourner sans Steam ni plugin
   (profil par défaut « Joueur »). En headless, SteamService n'initialise pas Steam.
-- AppID provisoire : 480 (Spacewar, app de test de Valve), réglage `steam/initialization/app_id`
-  dans `project.godot`. GodotSteam 4.15 : `steamInitEx()` sans argument, et `run_callbacks()`
+- AppID : **4303740** (Chess Battleground, Steam Direct payé), réglage `steam/initialization/app_id`
+  dans `project.godot`. Le compte doit posséder l'app (licence développeur de l'organisation
+  Steamworks), sinon Steam refuse l'init et le jeu prend le profil par défaut. GodotSteam 4.15 : `steamInitEx()` sans argument, et `run_callbacks()`
   appelé à chaque frame par SteamService.
+- Envoyer une build : `bash tools/envoyer_build_steam.sh` (Git Bash, dans une vraie fenêtre :
+  steamcmd demande mot de passe et Steam Guard). Exporte avec le preset « Windows Desktop »
+  (`export_presets.cfg`) dans `build/windows/`, puis SteamPipe vers le dépôt 4303741.
+  `--export` : exporte seulement. La mise en ligne (« Set build live ») se fait dans Steamworks.
+  Tant que le jeu n'est pas sorti, seuls les comptes de l'organisation et les détenteurs de
+  clés y ont accès. La build contient `Figurines/` : pas de clé à des tiers sans licence écrite.
 
 ## Conventions GDScript
 
