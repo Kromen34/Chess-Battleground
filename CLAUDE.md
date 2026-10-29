@@ -8,7 +8,7 @@ grille 8×8 en dur (obstacles, variantes de plateau futures).
 Ce fichier est lu par chaque session Claude Code, sur chaque PC. Il doit rester
 court et à jour : si tu changes une convention, mets-la à jour ici.
 
-## Où on en est (mis à jour le 28/10/2026)
+## Où on en est (mis à jour le 29/10/2026)
 
 À relire en début de session : c'est la mémoire partagée entre les PC.
 
@@ -39,7 +39,20 @@ court et à jour : si tu changes une convention, mets-la à jour ici.
   Toutes les figurines du pack Draconian Scourge sont faites (37 en tout).
 - Galerie des figurines (`scenes/figurine_gallery.tscn`, bouton du menu) : ← → pour changer,
   clic enfoncé pour tourner, molette pour zoomer. Liste tous les .glb de `res://Figurines/*/`.
-- Tests : 53 tests verts (`./tests.sh`).
+- Steam (29/10, branche `feat/steampipe`, partie de `feat/details-figurines`, pas encore fusionnée) :
+  Steam Direct payé, app **Chess Battleground 4303740**, package 1505054 (renommé), dépôt
+  Windows 4303742. Première build envoyée avec `tools/envoyer_build_steam.sh` (BuildID
+  26298844), mise en ligne sur la branche default. Jeu non publié (page du store non soumise).
+  En cours : le client Steam n'installait rien (dépôt pas encore ajouté au package 1505054) ;
+  vérifier que l'installation depuis la bibliothèque marche après l'ajout.
+- Tests : 56 tests verts (`./tests.sh`).
+
+**Prochaine étape choisie (reprise le 30/10) :** le **JcJ 1v1** sur le serveur, branche `feat/pvp` :
+mise en relation (file d'attente ou code de partie), `ServerMatch` avec deux joueurs humains au
+lieu de l'IA, bouton « Jouer contre un ami » au menu, et deux fenêtres du jeu sans Steam sur un
+même PC pour tester. Ensuite : clé Steam pour un 2e compte (`Demander des clés Steam` dans
+Steamworks ; deux clients Steam ne tournent pas sur un même PC). Clé à un ami = distribution des
+figurines : pas sans licence écrite d'Artisan Guild.
 
 **Prochaines étapes du serveur :** authentification par ticket de session Steam, PostgreSQL
 (joueurs, decks, points), stats des figurines servies par le serveur.
