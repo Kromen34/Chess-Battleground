@@ -37,8 +37,10 @@ court et à jour : si tu changes une convention, mets-la à jour ici.
 - Les 23 variantes de draconiens, elles aussi dans `Figurines/Dragons/` (même famille) (Shock Troops A à F ailé /
   sans ailes, Commander Drakvarr, Flamagath Blackflame, Onixia), 300-400k triangles.
   Toutes les figurines du pack Draconian Scourge sont faites (37 en tout).
-- Galerie des figurines (`scenes/figurine_gallery.tscn`, bouton du menu) : panneau des familles
-  à gauche (↑ ↓) et liste cliquable des figurines de la famille (← →), clic enfoncé pour tourner, molette pour zoomer.
+- Galerie des figurines (`scenes/figurine_gallery.tscn`, bouton du menu ; 29/10, branche
+  `feat/galerie-familles` partie de `feat/steampipe`, pas encore fusionnée) : panneau des familles
+  à gauche (↑ ↓) et liste cliquable des figurines de la famille (← →), clic enfoncé pour tourner,
+  molette pour zoomer. Pas encore vue à l'écran par Nicolas (mise en page à valider).
   Une famille = un dossier de `res://Figurines/` (sous-dossiers compris) ; une nouvelle famille
   = un nouveau dossier, rien à coder. Suppr / « Mettre de côté » déplace le .glb (et son .import)
   dans `<famille>/En attente/`, que la galerie ignore (case « Voir les figurines en attente »
@@ -51,7 +53,12 @@ court et à jour : si tu changes une convention, mets-la à jour ici.
   vérifier que l'installation depuis la bibliothèque marche après l'ajout.
 - Tests : 61 tests verts (`./tests.sh`).
 
-**Prochaine étape choisie (reprise le 30/10) :** le **JcJ 1v1** sur le serveur, branche `feat/pvp` :
+**Reprise le 30/10 :** d'abord la galerie (`feat/galerie-familles`) : Nicolas la teste, trie ses
+figurines avec « Mettre de côté », on ajuste la mise en page si besoin. Attention : Cavalier et
+Gardien utilisent `dragon_a_lancier` / `dragon_a_sauvage` (cylindres s'ils sont mis de côté).
+On travaille en local pour l'instant, pas de nouvel envoi sur Steam.
+
+**Prochaine étape choisie :** le **JcJ 1v1** sur le serveur, branche `feat/pvp` :
 mise en relation (file d'attente ou code de partie), `ServerMatch` avec deux joueurs humains au
 lieu de l'IA, bouton « Jouer contre un ami » au menu, et deux fenêtres du jeu sans Steam sur un
 même PC pour tester. Ensuite : clé Steam pour un 2e compte (`Demander des clés Steam` dans
