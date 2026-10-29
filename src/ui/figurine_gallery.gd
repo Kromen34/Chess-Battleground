@@ -1,6 +1,7 @@
 extends Node3D
 ## Galerie des figurines : une figurine à la fois sur un présentoir.
 ## - panneau de gauche ou flèches haut / bas : famille (un dossier de Figurines/, avec ses sous-dossiers) ;
+##   sous la famille, la liste de ses figurines : un clic affiche la figurine ;
 ## - flèches gauche / droite (ou boutons à l'écran) : figurine précédente / suivante ;
 ## - clic gauche ou droit enfoncé : tourner autour (et monter / descendre) ;
 ## - molette : zoom ; clic molette : vue de départ ; Échap : menu ;
@@ -17,7 +18,7 @@ const PITCH_MIN := -10.0
 const PITCH_MAX := 80.0
 const START_YAW := 0.0
 const START_PITCH := 18.0
-const FAMILY_PANEL_WIDTH := 260.0
+const FAMILY_PANEL_WIDTH := 300.0
 ## Famille des .glb posés directement dans Figurines/, hors sous-dossier.
 const LOOSE_FAMILY := "Divers"
 ## Dossier des figurines mises de côté, dans chaque famille : la galerie ne les montre plus.
@@ -28,6 +29,7 @@ var _families: Dictionary = {}
 var _family_names: PackedStringArray = []
 var _family: int = 0
 var _family_list: ItemList
+var _figurine_list: ItemList
 ## true : on parcourt les figurines en attente (pour les remettre) au lieu des autres.
 var _on_hold: bool = false
 var _hold_button: Button
@@ -126,6 +128,9 @@ func _select_family(i: int, index: int = 0) -> void:
 		_paths = _families[_family_names[_family]]
 		_family_list.select(_family)
 		_family_list.ensure_current_is_visible()
+	_figurine_list.clear()
+	for p in _paths:
+		_figurine_list.add_item(figurine_name(p))
 	_show(index)
 
 
@@ -170,6 +175,8 @@ func _show(i: int) -> void:
 	_index = posmod(i, _paths.size())
 	var path := _paths[_index]
 	_name_label.text = display_name(path)
+	_figurine_list.select(_index)
+	_figurine_list.ensure_current_is_visible()
 	_count_label.text = "%d / %d" % [_index + 1, _paths.size()]
 	var scene := load(path) as PackedScene
 	if scene == null:
@@ -265,9 +272,14 @@ static func group_by_family(paths: PackedStringArray, root: String) -> Dictionar
 	return out
 
 
+## « res://Figurines/Dragons/dragon_a_lancier.glb » -> « Dragon A Lancier ».
+static func figurine_name(path: String) -> String:
+	return path.get_file().get_basename().replace("_", " ").capitalize()
+
+
 ## « res://Figurines/Dragons/dragon_a_lancier.glb » -> « Dragons — Dragon A Lancier ».
 static func display_name(path: String) -> String:
-	var name := path.get_file().get_basename().replace("_", " ").capitalize()
+	var name := figurine_name(path)
 	var folder := path.get_base_dir().get_file()
 	return name if folder == "" or folder == "Figurines" else "%s — %s" % [folder, name]
 
@@ -382,15 +394,19 @@ func _build_family_panel(layer: CanvasLayer) -> void:
 	title.add_theme_font_size_override("font_size", 22)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(title)
-	_family_list = ItemList.new()
-	_family_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_family_list.add_theme_font_size_override("font_size", 18)
-	# Pas de focus clavier : les flèches restent à la galerie (↑ ↓ changent déjà de famille).
-	_family_list.focus_mode = Control.FOCUS_NONE
+	_family_list = _panel_list(box, 1.0)
 	_family_list.item_selected.connect(func(i: int) -> void:
 		if i != _family:
 			_select_family(i))
-	box.add_child(_family_list)
+
+	var fig_title := title.duplicate() as Label
+	fig_title.text = "Figurines"
+	box.add_child(fig_title)
+	# Deux fois plus haute que celle des familles : une famille compte des dizaines de figurines.
+	_figurine_list = _panel_list(box, 2.0)
+	_figurine_list.item_selected.connect(func(i: int) -> void:
+		if i != _index:
+			_show(i))
 
 	var show_held := CheckButton.new()
 	show_held.text = "Voir les figurines en attente"
@@ -407,6 +423,18 @@ func _build_family_panel(layer: CanvasLayer) -> void:
 	_hold_button.visible = not OS.has_feature("template")
 	show_held.visible = _hold_button.visible
 	box.add_child(_hold_button)
+
+
+## Liste du panneau de gauche, qui prend [ratio] parts de la hauteur libre.
+func _panel_list(box: VBoxContainer, ratio: float) -> ItemList:
+	var list := ItemList.new()
+	list.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	list.size_flags_stretch_ratio = ratio
+	list.add_theme_font_size_override("font_size", 17)
+	# Pas de focus clavier : les flèches restent à la galerie (↑ ↓ famille, ← → figurine).
+	list.focus_mode = Control.FOCUS_NONE
+	box.add_child(list)
+	return list
 
 
 func _arrow_button(text: String, preset: Control.LayoutPreset, x_offset: float) -> Button:

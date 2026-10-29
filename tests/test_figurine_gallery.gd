@@ -42,6 +42,7 @@ func test_list_models_of_missing_folder_is_empty() -> void:
 func test_display_name() -> void:
 	assert_eq(Gallery.display_name("res://Figurines/Dragons/dragon_a_lancier.glb"), "Dragons — Dragon A Lancier")
 	assert_eq(Gallery.display_name("res://Figurines/azgrathok.glb"), "Azgrathok")
+	assert_eq(Gallery.figurine_name("res://Figurines/Dragons/dragon_a_lancier.glb"), "Dragon A Lancier")
 
 
 func test_family_is_first_folder_under_root() -> void:

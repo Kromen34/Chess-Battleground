@@ -38,7 +38,7 @@ court et à jour : si tu changes une convention, mets-la à jour ici.
   sans ailes, Commander Drakvarr, Flamagath Blackflame, Onixia), 300-400k triangles.
   Toutes les figurines du pack Draconian Scourge sont faites (37 en tout).
 - Galerie des figurines (`scenes/figurine_gallery.tscn`, bouton du menu) : panneau des familles
-  à gauche (↑ ↓), ← → pour changer de figurine, clic enfoncé pour tourner, molette pour zoomer.
+  à gauche (↑ ↓) et liste cliquable des figurines de la famille (← →), clic enfoncé pour tourner, molette pour zoomer.
   Une famille = un dossier de `res://Figurines/` (sous-dossiers compris) ; une nouvelle famille
   = un nouveau dossier, rien à coder. Suppr / « Mettre de côté » déplace le .glb (et son .import)
   dans `<famille>/En attente/`, que la galerie ignore (case « Voir les figurines en attente »
