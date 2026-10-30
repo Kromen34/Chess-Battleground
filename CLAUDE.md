@@ -51,6 +51,9 @@ court et à jour : si tu changes une convention, mets-la à jour ici.
   26298844), mise en ligne sur la branche default. Jeu non publié (page du store non soumise).
   En cours : le client Steam n'installait rien (dépôt pas encore ajouté au package 1505054) ;
   vérifier que l'installation depuis la bibliothèque marche après l'ajout.
+  30/10 : build **26335190** envoyée (commit c2b2f27, `feat/collection` : collection, atelier de
+  peinture), avec `STEAM_USER=nemork` (session steamcmd en cache, pas de mot de passe demandé).
+  À mettre en ligne par Nicolas dans Steamworks (« Set build live », branche default).
 - Collection de cartes par joueur (30/10, branche `feat/collection` partie de `feat/galerie-familles`,
   poussée sur GitHub le 30/10, pas encore fusionnée dans `main`) : écran « Collection » au menu (`scenes/collection.tscn`), tout le
   catalogue, cartes possédées avec « ×N », les autres grisées (figurine en silhouette), consultation seule.
