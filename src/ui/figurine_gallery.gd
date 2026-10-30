@@ -159,6 +159,13 @@ static func on_hold_path(path: String, root: String) -> String:
 	return family_dir + ON_HOLD_DIR + "/" + path.get_file()
 
 
+## Le modèle [path] (à sa place normale dans sa famille) a-t-il été mis de côté ?
+## Sert aussi à la collection, qui ne montre que les figurines gardées.
+static func is_on_hold(path: String, root: String = FIGURINES_DIR) -> bool:
+	var held := on_hold_path(path, root)
+	return FileAccess.file_exists(held) or FileAccess.file_exists(held + ".import")
+
+
 ## Où remettre un modèle en attente : dans le dossier de la famille, à côté de En attente/.
 static func restored_path(path: String) -> String:
 	return path.get_base_dir().get_base_dir() + "/" + path.get_file()

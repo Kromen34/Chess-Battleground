@@ -60,7 +60,10 @@ court et à jour : si tu changes une convention, mets-la à jour ici.
   Un joueur commence **sans aucune carte** (Nicolas offrira des boosters au départ, plus tard).
   Collection stockée sur le serveur par SteamID **vérifié** : le client joint un ticket Steam Web API
   à HELLO, le serveur le fait valider par l'API Web Steam (`SteamWebAuth`). Catalogue provisoire : une
-  carte = une figurine (les 21 dragons gardés), en attendant le modèle de carte de Nicolas.
+  carte = une figurine (les 37 du pack, un `.tres` par figurine dans `src/core/cards/data/`), en
+  attendant le modèle de carte de Nicolas. La collection **masque les figurines mises de côté** dans
+  la galerie (`FigurineGallery.is_on_hold`) : le tri de la galerie décide de ce qu'elle montre.
+  Nouvelle figurine (nouveau kit) = ajouter son `.tres`, sinon elle n'apparaît pas dans la collection.
   **Déployé sur le VPS le 30/10** (clé Web API dans `/opt/chessbg/secrets/steam.env`, migration
   `001_collections.sql` passée). Compte de Nicolas (SteamID 76561197978875357) : `dragon_a_lancier` ×1,
   ajouté à la main pour tester (en SQL, comme superutilisateur `chessbg`).

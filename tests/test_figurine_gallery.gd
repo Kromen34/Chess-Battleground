@@ -68,6 +68,20 @@ func test_on_hold_folder_is_listed_apart() -> void:
 	assert_eq(Gallery.list_models(TMP, true), PackedStringArray([TMP + "Dragons/En attente/b.glb"]))
 
 
+func test_is_on_hold_follows_the_file() -> void:
+	var root := "user://test_galerie_attente/"
+	DirAccess.make_dir_recursive_absolute(root + "Dragons/" + Gallery.ON_HOLD_DIR)
+	var path := root + "Dragons/onixia.glb"
+	assert_false(Gallery.is_on_hold(path, root))
+	var held := Gallery.on_hold_path(path, root)
+	FileAccess.open(held + ".import", FileAccess.WRITE).close()
+	assert_true(Gallery.is_on_hold(path, root), "jeu exporté : seul le .import reste")
+	DirAccess.remove_absolute(held + ".import")
+	DirAccess.remove_absolute(root + "Dragons/" + Gallery.ON_HOLD_DIR)
+	DirAccess.remove_absolute(root + "Dragons")
+	DirAccess.remove_absolute(root)
+
+
 func test_on_hold_and_restored_paths() -> void:
 	var root := "res://Figurines/"
 	assert_eq(Gallery.on_hold_path(root + "Dragons/onixia.glb", root), root + "Dragons/En attente/onixia.glb")

@@ -1,5 +1,6 @@
 extends Node3D
-## Écran Collection : toutes les cartes du jeu, celles du joueur avec leur nombre
+## Écran Collection : toutes les cartes du jeu (sauf celles dont la figurine a été mise
+## de côté dans la galerie), celles du joueur avec leur nombre
 ## d'exemplaires (figurine grise tant qu'elle n'est pas peinte, sinon avec sa peinture),
 ## les autres grisées (figurine en silhouette unie). Consultation seule.
 ## La collection vient du serveur (elle y est stockée, par SteamID vérifié) : l'écran se
@@ -11,6 +12,7 @@ extends Node3D
 const MENU_SCENE := "res://scenes/main_menu.tscn"
 const MainMenu := preload("res://src/ui/main_menu.gd")
 const PaintStudio := preload("res://src/ui/paint_studio.gd")
+const FigurineGallery := preload("res://src/ui/figurine_gallery.gd")
 const PAINT_SCENE := "res://scenes/paint_studio.tscn"
 const PANEL_WIDTH := 300.0
 const LOCKED_COLOR := Color(1, 1, 1, 0.38)
@@ -20,7 +22,9 @@ var _catalog: CardCatalog
 var _collection: CardCollection = null
 var _client: NetClient
 
+## Familles et cartes affichées : celles du catalogue dont la figurine n'est pas mise de côté.
 var _families: PackedStringArray = []
+var _shown: Dictionary = {}
 var _family: int = 0
 var _cards: Array[CardDef] = []
 var _index: int = 0
@@ -39,7 +43,7 @@ var _paint_button: Button
 
 func _ready() -> void:
 	_catalog = CardCatalog.load_dir()
-	_families = _catalog.families()
+	_load_shown_cards()
 	_stage = FigurineStage.new()
 	add_child(_stage)
 	# Lumière blanche : sous la lumière chaude du salon, le gris des figurines tire sur le beige.
@@ -121,28 +125,47 @@ func _count_of(card: CardDef) -> int:
 	return _collection.count_of(card.id) if _collection != null else 0
 
 
+func _load_shown_cards() -> void:
+	_families = []
+	_shown = {}
+	for f in _catalog.families():
+		var cards: Array[CardDef] = []
+		for card in _catalog.cards_of(f):
+			if not FigurineGallery.is_on_hold(card.model_path):
+				cards.append(card)
+		if not cards.is_empty():
+			_families.append(f)
+			_shown[f] = cards
+
+
+func _cards_of(family: String) -> Array[CardDef]:
+	return _shown.get(family, [] as Array[CardDef])
+
+
 ## Se place sur la carte [id] (retour de l'atelier de peinture).
 func _select_card(id: StringName) -> void:
 	var card := _catalog.get_card(id)
-	if card == null:
+	if card == null or not _shown.has(card.family):
 		return
 	_family = maxi(0, _families.find(card.family))
-	_index = maxi(0, _catalog.cards_of(card.family).find(card))
+	_index = maxi(0, _cards_of(card.family).find(card))
 
 
 ## Remplit le panneau en gardant la famille et la carte affichées.
 func _refresh_lists() -> void:
 	var owned := 0
+	var total := 0
 	_family_list.clear()
 	for f in _families:
-		var cards := _catalog.cards_of(f)
+		var cards := _cards_of(f)
+		total += cards.size()
 		var n := 0
 		for card in cards:
 			if _count_of(card) > 0:
 				n += 1
 		owned += n
 		_family_list.add_item("%s  (%d / %d)" % [f, n, cards.size()])
-	_total_label.text = "Collection : %d / %d cartes" % [owned, _catalog.size()]
+	_total_label.text = "Collection : %d / %d cartes" % [owned, total]
 	_select_family(_family, _index)
 
 
@@ -151,7 +174,7 @@ func _select_family(i: int, index: int = 0) -> void:
 	_cards = []
 	if not _families.is_empty():
 		_family = posmod(i, _families.size())
-		_cards = _catalog.cards_of(_families[_family])
+		_cards = _cards_of(_families[_family])
 		_family_list.select(_family)
 		_family_list.ensure_current_is_visible()
 	_card_list.clear()
