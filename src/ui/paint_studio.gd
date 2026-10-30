@@ -1,7 +1,8 @@
 extends Node3D
 ## Atelier de peinture d'une figurine de la collection.
 ## Outils : pinceau, gomme, brossage à sec (arêtes), lavis (creux), flou, pipette,
-## remplissage d'une pièce. Réglages : taille, dureté, opacité, métal, brillance,
+## remplissage d'une pièce. Forme de la pointe (BrushTip), commune aux outils qui touchent
+## la figurine, avec angle, rondeur et suivi du trait. Réglages : taille, dureté, opacité, métal, brillance,
 ## symétrie, pièce seule, faces visibles. Calques (visibilité, opacité, mode, ordre,
 ## fusion), annuler / rétablir, enregistrement automatique, capture d'écran.
 ## La peinture est locale (user://peintures/), une par carte. Voir FigurinePaint.
@@ -69,10 +70,20 @@ var _flow: float = 0.6
 var _mirror: bool = false
 var _lock_part: bool = false
 var _facing_only: bool = true
+var _tip := BrushTip.new()
+## Rotation de la pointe sur la surface, en degrés.
+var _angle: float = 0.0
+## La pointe s'oriente selon la direction du trait (pinceau plat, poils).
+var _follow: bool = false
 
 var _stroke: bool = false
 var _stroke_part: int = -1
 var _last_dab: Vector3 = Vector3.INF
+## Direction du trait en cours (repère du modèle), ZERO au premier point.
+var _stroke_dir: Vector3 = Vector3.ZERO
+## Tirages propres à chaque trait et à chaque touche (poils, moucheté, éponge).
+var _stroke_seed: int = 0
+var _dab_count: int = 0
 ## Valeurs d'avant le coup de pinceau, pour l'annuler : sommet codé -> [Color, Vector2].
 var _stroke_changes: Dictionary = {}
 var _undo: Array[Dictionary] = []
@@ -81,7 +92,7 @@ var _unsaved: bool = false
 
 var _layer_ui: CanvasLayer
 var _cursor: MeshInstance3D
-var _cursor_inner: MeshInstance3D
+var _cursor_material: StandardMaterial3D
 var _title: Label
 var _status: Label
 var _tool_buttons: Dictionary = {}
@@ -91,6 +102,10 @@ var _flow_slider: HSlider
 var _metal_slider: HSlider
 var _gloss_slider: HSlider
 var _mirror_check: CheckBox
+var _shape_buttons: Dictionary = {}
+var _follow_check: CheckBox
+var _angle_slider: HSlider
+var _round_slider: HSlider
 var _picker: ColorPicker
 var _primary_rect: ColorRect
 var _secondary_rect: ColorRect
@@ -190,6 +205,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		# Comme Photoshop : 1 = 10 %, ..., 0 = 100 %.
 		var n := k.keycode - KEY_0
 		_flow_slider.value = 1.0 if n == 0 else n / 10.0
+	elif k.keycode in [KEY_COMMA, KEY_SEMICOLON]:
+		_angle_slider.value += 15.0 if k.keycode == KEY_SEMICOLON else -15.0
 	elif k.keycode == KEY_X:
 		var c := _color
 		_set_color(_secondary)
@@ -259,6 +276,8 @@ func _begin_stroke(alt: bool) -> void:
 	_stroke_part = int(hit["part"])
 	_stroke_changes = {}
 	_last_dab = Vector3.INF
+	_stroke_dir = Vector3.ZERO
+	_stroke_seed = randi()
 	_stroke_to(hit)
 
 
@@ -286,6 +305,8 @@ func _stroke_to(hit: Dictionary) -> void:
 		_dab_with_mirror(target, normal)
 		_last_dab = target
 		return
+	if dist > 0.0001:
+		_stroke_dir = (target - _last_dab) / dist
 	var steps := int(dist / spacing)
 	for s in steps:
 		var pos := _last_dab.move_toward(target, spacing)
@@ -294,17 +315,37 @@ func _stroke_to(hit: Dictionary) -> void:
 
 
 func _dab_with_mirror(center: Vector3, normal: Vector3) -> void:
-	_dab(center, normal, true)
+	var u := _tip_axis(normal, false)
+	_dab(center, normal, u, true)
 	if _mirror:
 		# Les figurines sont tournées vers -Z : le plan de symétrie est x = 0.
-		_dab(Vector3(-center.x, center.y, center.z), Vector3(-normal.x, normal.y, normal.z), false)
+		_dab(Vector3(-center.x, center.y, center.z), Vector3(-normal.x, normal.y, normal.z),
+				Vector3(-u.x, u.y, u.z), false)
 
 
-## Une touche de pinceau autour de [center] sur le calque actif.
-func _dab(center: Vector3, normal: Vector3, use_lock: bool) -> void:
-	_grid.query(center, _radius)
+## Axe x de la pointe sur la surface de normale [normal] : en travers du trait s'il est
+## suivi, sinon horizontal à l'écran ; puis tourné de l'angle choisi. [world] : repère du
+## monde (curseur) au lieu de celui du modèle.
+func _tip_axis(normal: Vector3, world: bool) -> Vector3:
+	var model_basis := _stage.model().global_transform.basis
+	var ref: Vector3
+	if _follow and _stroke and _stroke_dir != Vector3.ZERO:
+		var dir := model_basis * _stroke_dir if world else _stroke_dir
+		ref = normal.cross(dir)
+	else:
+		var right := _stage.camera().global_transform.basis.x
+		ref = right if world else model_basis.inverse() * right
+	var u := ref - normal * ref.dot(normal)
+	if u.length_squared() < 0.000001:
+		u = normal.cross(Vector3.UP if absf(normal.y) < 0.9 else Vector3.RIGHT)
+	return u.normalized().rotated(normal, deg_to_rad(_angle))
+
+
+## Une touche de pinceau autour de [center] sur le calque actif. [u_axis] : axe x de la pointe.
+func _dab(center: Vector3, normal: Vector3, u_axis: Vector3, use_lock: bool) -> void:
+	_dab_count += 1
+	_grid.query(center, _radius * _tip.reach())
 	var found := _grid.found
-	var dists := _grid.found_dist
 	if found.is_empty():
 		return
 	var layer := _paint.layers[_active]
@@ -312,6 +353,7 @@ func _dab(center: Vector3, normal: Vector3, use_lock: bool) -> void:
 	color.a = 1.0
 	var finish := Vector2(_metal, 1.0 - _gloss)
 	var lock := _stroke_part if use_lock and _lock_part else -1
+	var v_axis := normal.cross(u_axis)
 	var bits := FigurinePaint.INDEX_BITS
 	var mask := FigurinePaint.INDEX_MASK
 
@@ -326,8 +368,18 @@ func _dab(center: Vector3, normal: Vector3, use_lock: bool) -> void:
 			continue
 		if _facing_only and _paint.parts[p].normals[i].dot(normal) < 0.1:
 			continue
-		var t := dists[k] / _radius
-		var w := 1.0 if t <= _hardness else 1.0 - smoothstep(_hardness, 1.0, t)
+		var d := _paint.parts[p].positions[i] - center
+		# Pas de peinture à travers une partie fine : on reste près de la surface touchée.
+		if absf(d.dot(normal)) > _radius:
+			continue
+		var noise := 0.0
+		if _tip.shape == BrushTip.Shape.SPONGE:
+			# Texture fixée dans l'espace mais décalée à chaque touche : grain d'éponge.
+			var q := (d + center) / (_radius * 0.22)
+			noise = BrushTip.hash3(floori(q.x) + _dab_count * 31, floori(q.y), floori(q.z))
+		elif _tip.shape == BrushTip.Shape.SPRAY:
+			noise = BrushTip.hash3(found[k], _dab_count, 11)
+		var w := _tip.weight(d.dot(u_axis) / _radius, d.dot(v_axis) / _radius, noise, _stroke_seed)
 		match _tool:
 			Tool.DRYBRUSH:
 				w *= _paint.edge_factor(p, i)
@@ -645,6 +697,14 @@ func _refresh_layers() -> void:
 
 # --- Divers -------------------------------------------------------------------------
 
+func _select_shape(shape: BrushTip.Shape) -> void:
+	_tip.shape = shape
+	# Les pointes allongées sont faites pour suivre le trait.
+	_follow_check.button_pressed = shape in BrushTip.FOLLOWS_STROKE
+	_refresh_tip()
+	_set_status("Pointe : %s. %s." % BrushTip.SHAPES[shape])
+
+
 func _select_tool(t: Tool) -> void:
 	_tool = t
 	for k: Tool in _tool_buttons:
@@ -678,7 +738,6 @@ func _leave() -> void:
 func _capture() -> void:
 	_layer_ui.visible = false
 	_cursor.visible = false
-	_cursor_inner.visible = false
 	await RenderingServer.frame_post_draw
 	var image := get_viewport().get_texture().get_image()
 	_layer_ui.visible = true
@@ -694,41 +753,40 @@ func _set_status(text: String) -> void:
 
 
 func _build_cursor() -> void:
-	_cursor = _ring(Color(1, 1, 1, 0.9))
-	_cursor_inner = _ring(Color(1, 1, 1, 0.35))
+	var quad := QuadMesh.new()
+	quad.size = Vector2(2, 2)
+	_cursor_material = StandardMaterial3D.new()
+	_cursor_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_cursor_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	_cursor_material.no_depth_test = true
+	_cursor_material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	quad.material = _cursor_material
+	_cursor = MeshInstance3D.new()
+	_cursor.mesh = quad
+	_cursor.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_cursor.visible = false
+	add_child(_cursor)
+	_refresh_tip()
 
 
-func _ring(color: Color) -> MeshInstance3D:
-	var torus := TorusMesh.new()
-	torus.inner_radius = 0.94
-	torus.outer_radius = 1.0
-	torus.rings = 48
-	torus.ring_segments = 4
-	var mat := StandardMaterial3D.new()
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.no_depth_test = true
-	mat.albedo_color = color
-	torus.material = mat
-	var mi := MeshInstance3D.new()
-	mi.mesh = torus
-	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	mi.visible = false
-	add_child(mi)
-	return mi
+## Redessine le curseur et les icônes après un changement de pointe.
+func _refresh_tip() -> void:
+	_tip.hardness = _hardness
+	_cursor_material.albedo_texture = ImageTexture.create_from_image(_tip.make_image(128))
+	for shape: BrushTip.Shape in _shape_buttons:
+		(_shape_buttons[shape] as Button).button_pressed = shape == _tip.shape
 
 
 func _update_cursor(hit: Dictionary) -> void:
 	var show := not hit.is_empty() and _tool != Tool.PICKER and _tool != Tool.FILL
 	_cursor.visible = show
-	_cursor_inner.visible = show and _hardness < 0.97
 	if not show:
 		return
 	var n: Vector3 = hit["world_normal"]
-	var x := n.cross(Vector3.UP if absf(n.y) < 0.9 else Vector3.RIGHT).normalized()
-	var basis := Basis(x, n, x.cross(n))
-	_cursor.global_transform = Transform3D(basis.scaled(Vector3.ONE * _radius), hit["world"])
-	_cursor_inner.global_transform = Transform3D(basis.scaled(Vector3.ONE * maxf(_radius * _hardness, 0.0005)), hit["world"])
+	var u := _tip_axis(n, true)
+	# QuadMesh : face vers +Z, x = largeur de la pointe, y = son épaisseur.
+	var basis := Basis(u, n.cross(u), n)
+	_cursor.global_transform = Transform3D(basis.scaled(Vector3.ONE * _radius), hit["world"] + n * 0.002)
 
 
 # --- Interface --------------------------------------------------------------------
@@ -749,7 +807,7 @@ func _build_ui() -> void:
 	_status.modulate = Color(1, 1, 1, 0.75)
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
-	var help := _label(null, 14, "Clic gauche : peindre · clic droit : tourner · clic molette : déplacer · molette : zoom · F : recentrer · [ ] : taille · Maj+[ ] : dureté · 1…0 : opacité · Alt+clic : pipette · X : couleurs · M : symétrie · Ctrl+Z / Ctrl+Y · Ctrl+S · Échap : collection")
+	var help := _label(null, 14, "Clic gauche : peindre · clic droit : tourner · clic molette : déplacer · molette : zoom · F : recentrer · [ ] : taille · Maj+[ ] : dureté · , ; : angle · 1…0 : opacité · Alt+clic : pipette · X : couleurs · M : symétrie · Ctrl+Z / Ctrl+Y · Ctrl+S · Échap : collection")
 	help.modulate = Color(1, 1, 1, 0.55)
 	help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	help.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
@@ -827,10 +885,42 @@ func _build_left_panel() -> void:
 			func(v: float) -> void: _radius = _slider_to_radius(v))
 	_hardness_slider = _slider(box, "Dureté", 0.0, 1.0, 0.01, _hardness,
 			func(v: float) -> String: return "%d %%" % roundi(v * 100.0),
-			func(v: float) -> void: _hardness = v)
+			func(v: float) -> void:
+				_hardness = v
+				_refresh_tip())
 	_flow_slider = _slider(box, "Opacité", 0.02, 1.0, 0.01, _flow,
 			func(v: float) -> String: return "%d %%" % roundi(v * 100.0),
 			func(v: float) -> void: _flow = v)
+
+	_section(box, "Forme de la pointe")
+	var shapes := GridContainer.new()
+	shapes.columns = 4
+	box.add_child(shapes)
+	for shape: BrushTip.Shape in BrushTip.SHAPES:
+		var icon_tip := BrushTip.new()
+		icon_tip.shape = shape
+		icon_tip.hardness = 0.75
+		var b := Button.new()
+		b.icon = ImageTexture.create_from_image(icon_tip.make_image(40, false))
+		b.tooltip_text = "%s : %s" % BrushTip.SHAPES[shape]
+		b.toggle_mode = true
+		b.focus_mode = Control.FOCUS_NONE
+		b.custom_minimum_size = Vector2(50, 48)
+		b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		b.expand_icon = true
+		b.pressed.connect(_select_shape.bind(shape))
+		shapes.add_child(b)
+		_shape_buttons[shape] = b
+	_angle_slider = _slider(box, "Angle", -90.0, 90.0, 1.0, _angle,
+			func(v: float) -> String: return "%d°" % roundi(v),
+			func(v: float) -> void: _angle = v)
+	_round_slider = _slider(box, "Rondeur", 0.1, 1.0, 0.01, _tip.roundness,
+			func(v: float) -> String: return "%d %%" % roundi(v * 100.0),
+			func(v: float) -> void:
+				_tip.roundness = v
+				_refresh_tip())
+	_follow_check = _check(box, "Suivre le trait", _follow, func(on: bool) -> void: _follow = on)
+	_follow_check.tooltip_text = "La pointe tourne avec la direction du trait (pinceau plat, poils)"
 
 	_section(box, "Finition")
 	_metal_slider = _slider(box, "Métal", 0.0, 1.0, 0.01, _metal,

@@ -65,7 +65,8 @@ court et à jour : si tu changes une convention, mets-la à jour ici.
   (cartes possédées), `scenes/paint_studio.tscn`. Peinture en **couleurs de sommets** (pas d'UV) :
   `src/view/figurine_paint.gd` (calques couleur + couverture + métal + rugosité par sommet, posés sur la
   couleur de chaque pièce, multipliés par le lavis d'origine ; shader qui lit COLOR et CUSTOM0) et
-  `vertex_grid.gd` (sommets proches du pinceau). Outils : pinceau, gomme, brossage à sec (arêtes,
+  `vertex_grid.gd` (sommets proches du pinceau), `brush_tip.gd` (forme de la pointe, commune aux
+outils : rond, carré, losange, plat, éponge, moucheté, poils ; angle, rondeur, suivi du trait). Outils : pinceau, gomme, brossage à sec (arêtes,
   d'après le lavis), lavis (creux), fondu, pipette, remplissage d'une pièce ; taille en mm, dureté,
   opacité, métal, brillance, symétrie, « rester sur la pièce », calques (mode Normal / Produit,
   fusion), annuler / rétablir, capture. Enregistrement **local** `user://peintures/<carte>.peinture`
