@@ -70,7 +70,8 @@ outils : rond, carré, losange, plat, éponge, moucheté, poils ; angle, rondeur
   d'après le lavis), lavis (creux), fondu, pipette, remplissage d'une pièce ; taille en mm, dureté,
   opacité, métal, brillance, symétrie, « rester sur la pièce », calques (mode Normal / Produit,
   fusion), annuler / rétablir, capture. Enregistrement **local** `user://peintures/<carte>.peinture`
-  (pas encore sur le serveur) ; la collection affiche la figurine peinte. Pas encore vu par Nicolas.
+  (pas encore sur le serveur) ; la collection affiche la figurine peinte. Validé par Nicolas le 30/10 :
+  **on n'y touche plus pour l'instant**, on y reviendra plus tard.
 - Tests : 90 tests verts (`./tests.sh`).
 
 **Reprise le 30/10 :** d'abord la galerie (`feat/galerie-familles`) : Nicolas la teste, trie ses
