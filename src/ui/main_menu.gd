@@ -7,11 +7,13 @@ const GAME_SCENE := "res://scenes/main.tscn"
 const DEFAULT_SERVER_HOST := "51.91.97.41"
 const OPTIONS_SCENE := "res://scenes/options_menu.tscn"
 const GALLERY_SCENE := "res://scenes/figurine_gallery.tscn"
+const COLLECTION_SCENE := "res://scenes/collection.tscn"
 
 @onready var profile_name: Label = %ProfileName
 @onready var profile_avatar: TextureRect = %ProfileAvatar
 @onready var play_button: Button = %PlayButton
 @onready var online_button: Button = %OnlineButton
+@onready var collection_button: Button = %CollectionButton
 @onready var gallery_button: Button = %GalleryButton
 @onready var options_button: Button = %OptionsButton
 @onready var quit_button: Button = %QuitButton
@@ -20,6 +22,7 @@ const GALLERY_SCENE := "res://scenes/figurine_gallery.tscn"
 func _ready() -> void:
 	play_button.pressed.connect(_on_play_pressed)
 	online_button.pressed.connect(_on_online_pressed)
+	collection_button.pressed.connect(func() -> void: get_tree().change_scene_to_file(COLLECTION_SCENE))
 	gallery_button.pressed.connect(func() -> void: get_tree().change_scene_to_file(GALLERY_SCENE))
 	options_button.pressed.connect(func() -> void: get_tree().change_scene_to_file(OPTIONS_SCENE))
 	quit_button.pressed.connect(func() -> void: get_tree().quit())
