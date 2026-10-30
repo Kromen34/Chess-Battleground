@@ -40,7 +40,7 @@ court et à jour : si tu changes une convention, mets-la à jour ici.
 - Galerie des figurines (`scenes/figurine_gallery.tscn`, bouton du menu ; 29/10, branche
   `feat/galerie-familles` partie de `feat/steampipe`, pas encore fusionnée) : panneau des familles
   à gauche (↑ ↓) et liste cliquable des figurines de la famille (← →), clic enfoncé pour tourner,
-  molette pour zoomer. Pas encore vue à l'écran par Nicolas (mise en page à valider).
+  molette pour zoomer. Utilisée par Nicolas le 30/10 pour trier : 14 figurines gardées, 23 en attente.
   Une famille = un dossier de `res://Figurines/` (sous-dossiers compris) ; une nouvelle famille
   = un nouveau dossier, rien à coder. Suppr / « Mettre de côté » déplace le .glb (et son .import)
   dans `<famille>/En attente/`, que la galerie ignore (case « Voir les figurines en attente »
@@ -52,7 +52,7 @@ court et à jour : si tu changes une convention, mets-la à jour ici.
   En cours : le client Steam n'installait rien (dépôt pas encore ajouté au package 1505054) ;
   vérifier que l'installation depuis la bibliothèque marche après l'ajout.
 - Collection de cartes par joueur (30/10, branche `feat/collection` partie de `feat/galerie-familles`,
-  pas encore fusionnée ni déployée) : écran « Collection » au menu (`scenes/collection.tscn`), tout le
+  poussée sur GitHub le 30/10, pas encore fusionnée dans `main`) : écran « Collection » au menu (`scenes/collection.tscn`), tout le
   catalogue, cartes possédées avec « ×N », les autres grisées (figurine en silhouette), consultation seule.
   **Une figurine non peinte est toute grise** (sous-couche `FigurinePaint.PRIMER`, mate, lavis
   conservé) : dans la collection et comme point de départ de l'atelier (décision de Nicolas, 30/10).
@@ -76,18 +76,21 @@ court et à jour : si tu changes une convention, mets-la à jour ici.
   `src/view/figurine_paint.gd` (calques couleur + couverture + métal + rugosité par sommet, posés sur la
   couleur de chaque pièce, multipliés par le lavis d'origine ; shader qui lit COLOR et CUSTOM0) et
   `vertex_grid.gd` (sommets proches du pinceau), `brush_tip.gd` (forme de la pointe, commune aux
-outils : rond, carré, losange, plat, éponge, moucheté, poils ; angle, rondeur, suivi du trait). Outils : pinceau, gomme, brossage à sec (arêtes,
+  outils : rond, carré, losange, plat, éponge, moucheté, poils ; angle, rondeur, suivi du trait). Outils : pinceau, gomme, brossage à sec (arêtes,
   d'après le lavis), lavis (creux), fondu, pipette, remplissage d'une pièce ; taille en mm, dureté,
   opacité, métal, brillance, symétrie, « rester sur la pièce », calques (mode Normal / Produit,
-  fusion), annuler / rétablir, capture. Enregistrement **local** `user://peintures/<carte>.peinture`
+  fusion), annuler / rétablir, capture. Enregistrement **local** `user://peintures/<carte>_<exemplaire>.peinture`
   (pas encore sur le serveur) ; la collection affiche la figurine peinte. Validé par Nicolas le 30/10 :
   **on n'y touche plus pour l'instant**, on y reviendra plus tard.
-- Tests : 90 tests verts (`./tests.sh`).
+- Tests : 98 tests verts (`./tests.sh`). Les écrans (collection, atelier) se vérifient aussi en
+  rendu réel : script SceneTree qui instancie la scène et enregistre une capture, ou
+  `godot --path . res://scenes/<scène>.tscn --write-movie <dossier>/f.png --fixed-fps 10 --quit-after 120`
+  (ce dernier charge les autoloads, donc Steam et le vrai serveur ; Nicolas peut toucher au jeu pendant).
+  Attention : en mode `-s`, les autoloads (SteamService…) n'existent pas.
 
-**Reprise le 30/10 :** d'abord la galerie (`feat/galerie-familles`) : Nicolas la teste, trie ses
-figurines avec « Mettre de côté », on ajuste la mise en page si besoin. Attention : Cavalier et
-Gardien utilisent `dragon_a_lancier` / `dragon_a_sauvage` (cylindres s'ils sont mis de côté).
-On travaille en local pour l'instant, pas de nouvel envoi sur Steam.
+**Reprise après le 30/10 :** `feat/collection` contient tout (galerie, collection, atelier) ; reste à
+la fusionner dans `main` quand Nicolas le décide. Attention : Gardien utilise `dragon_a_sauvage`, mis
+de côté par Nicolas, donc cylindre en partie (Cavalier = `dragon_a_lancier`, gardé).
 
 **Interface :** Nicolas veut la rendre plus jolie plus tard (collection, atelier) ; fonctionnelle pour l'instant.
 
