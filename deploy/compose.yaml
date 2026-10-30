@@ -12,6 +12,13 @@ services:
     restart: unless-stopped
     ports:
       - "7777:7777/udp"
+    command: ["--port=7777", "--db-url=http://postgrest:3000"]
+    # STEAM_WEB_API_KEY (clé Web API éditeur, Steamworks) : vérifie les tickets Steam des
+    # joueurs. Sans ce fichier, tout le monde est invité et les collections sont indisponibles.
+    env_file:
+      - path: /opt/chessbg/secrets/steam.env
+        required: false
+    depends_on: [postgrest]
     # Le serveur n'écrit rien sur disque : conteneur en lecture seule, sans privilèges.
     read_only: true
     tmpfs:
@@ -20,6 +27,27 @@ services:
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
     mem_limit: 1g
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }
+
+  # Expose le schéma « api » de PostgreSQL en HTTP pour le serveur de jeu (Godot n'a pas
+  # de pilote PostgreSQL). Aucun port publié : joignable seulement dans la stack.
+  postgrest:
+    image: postgrest/postgrest:v12.2.3
+    restart: unless-stopped
+    environment:
+      PGRST_DB_SCHEMAS: api
+      PGRST_DB_ANON_ROLE: game_server
+      PGRST_OPENAPI_MODE: disabled
+    # PGRST_DB_URI (avec le mot de passe du rôle authenticator), généré par remote_setup.sh.
+    env_file: /opt/chessbg/secrets/postgrest.env
+    depends_on:
+      db: { condition: service_healthy }
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 256m
     logging:
       driver: json-file
       options: { max-size: "10m", max-file: "5" }
