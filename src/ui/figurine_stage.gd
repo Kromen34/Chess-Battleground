@@ -3,7 +3,8 @@ extends Node3D
 ## Présentoir d'une figurine, partagé par la galerie et l'écran Collection : décor,
 ## lumières, socle en bois et caméra orbitale.
 ## Souris : clic gauche ou droit enfoncé = tourner autour (et monter / descendre),
-## molette = zoom, clic molette = vue de départ.
+## molette = zoom, clic molette = vue de départ. L'atelier de peinture garde le clic gauche
+## pour le pinceau ([member rotate_mask]) et déplace la vue au clic molette ([member pan]).
 
 const ROTATE_SPEED := 0.008
 const SMOOTHING := 12.0
@@ -12,7 +13,17 @@ const PITCH_MAX := 80.0
 const START_YAW := 0.0
 const START_PITCH := 18.0
 
+## Boutons qui font tourner la vue.
+var rotate_mask: int = MOUSE_BUTTON_MASK_LEFT | MOUSE_BUTTON_MASK_RIGHT
+## Clic molette enfoncé = déplacer la vue (au lieu de revenir à la vue de départ).
+var pan: bool = false
+## Zoom avant maximal, en fraction de la taille de la figurine.
+var min_zoom: float = 0.25
+
 var _model: Node3D = null
+var _env: Environment
+var _key: DirectionalLight3D
+var _home_focus: Vector3 = Vector3.ZERO
 var _camera: Camera3D
 
 var _focus: Vector3 = Vector3.ZERO
@@ -39,11 +50,15 @@ func _unhandled_input(event: InputEvent) -> void:
 			_target_distance = maxf(_min_distance, _target_distance * 0.88)
 		elif mb.pressed and mb.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			_target_distance = minf(_max_distance, _target_distance / 0.88)
-		elif mb.pressed and mb.button_index == MOUSE_BUTTON_MIDDLE:
-			_reset_view()
+		elif mb.pressed and mb.button_index == MOUSE_BUTTON_MIDDLE and not pan:
+			reset_view()
 	elif event is InputEventMouseMotion:
 		var mm := event as InputEventMouseMotion
-		if mm.button_mask & (MOUSE_BUTTON_MASK_LEFT | MOUSE_BUTTON_MASK_RIGHT):
+		if pan and mm.button_mask & MOUSE_BUTTON_MASK_MIDDLE:
+			var b := _camera.global_transform.basis
+			var k := _distance * tan(deg_to_rad(_camera.fov * 0.5)) * 2.0 / maxf(1.0, get_viewport().get_visible_rect().size.y)
+			_focus += (-b.x * mm.relative.x + b.y * mm.relative.y) * k
+		elif mm.button_mask & rotate_mask:
 			_target_yaw -= mm.relative.x * ROTATE_SPEED
 			_target_pitch = clampf(_target_pitch + rad_to_deg(mm.relative.y * ROTATE_SPEED),
 					PITCH_MIN, PITCH_MAX)
@@ -55,6 +70,21 @@ func _process(delta: float) -> void:
 	_pitch = lerpf(_pitch, _target_pitch, t)
 	_distance = lerpf(_distance, _target_distance, t)
 	_apply_camera()
+
+
+func camera() -> Camera3D:
+	return _camera
+
+
+## La figurine affichée (null si aucune).
+func model() -> Node3D:
+	return _model
+
+
+## Lumière neutre (blanche) pour juger les couleurs en peignant, ou chaude du salon.
+func set_neutral_light(on: bool) -> void:
+	_key.light_color = Color.WHITE if on else Color(1.0, 0.88, 0.72)
+	_env.ambient_light_color = Color(0.72, 0.72, 0.72) if on else Color(0.75, 0.7, 0.65)
 
 
 ## Retire la figurine affichée.
@@ -83,12 +113,12 @@ func show_model(path: String, material: Material = null) -> bool:
 			mi.material_override = material
 
 	var box := _model_bounds(_model)
-	_focus = box.get_center()
+	_home_focus = box.get_center()
 	var radius := box.size.length() * 0.5
 	_home_distance = radius / sin(deg_to_rad(_camera.fov * 0.5)) * 0.85
-	_min_distance = radius * 0.25
+	_min_distance = radius * min_zoom
 	_max_distance = _home_distance * 3.0
-	_reset_view()
+	reset_view()
 	# Pas de glissement depuis la figurine précédente : on part directement de la vue de départ.
 	_yaw = _target_yaw
 	_pitch = _target_pitch
@@ -103,7 +133,8 @@ func _apply_camera() -> void:
 	_camera.look_at_from_position(_focus + dir * _distance, _focus, Vector3.UP)
 
 
-func _reset_view() -> void:
+func reset_view() -> void:
+	_focus = _home_focus
 	_target_yaw = START_YAW
 	_target_pitch = START_PITCH
 	_target_distance = _home_distance
@@ -123,6 +154,7 @@ func _model_bounds(model: Node3D) -> AABB:
 func _build_stage() -> void:
 	var env := WorldEnvironment.new()
 	env.environment = Environment.new()
+	_env = env.environment
 	env.environment.background_mode = Environment.BG_COLOR
 	env.environment.background_color = Color(0.09, 0.08, 0.075)
 	env.environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
@@ -130,10 +162,21 @@ func _build_stage() -> void:
 	env.environment.ambient_light_energy = 0.45
 	env.environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	env.environment.ssao_enabled = true
+	# Ciel neutre invisible (le fond reste uni) : il donne aux métaux quelque chose à refléter,
+	# sinon l'or et l'argent peints paraissent noirs.
+	var sky_mat := ProceduralSkyMaterial.new()
+	sky_mat.sky_top_color = Color(0.62, 0.62, 0.66)
+	sky_mat.sky_horizon_color = Color(0.78, 0.75, 0.7)
+	sky_mat.ground_horizon_color = Color(0.45, 0.42, 0.38)
+	sky_mat.ground_bottom_color = Color(0.16, 0.14, 0.12)
+	env.environment.sky = Sky.new()
+	env.environment.sky.sky_material = sky_mat
+	env.environment.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
 	add_child(env)
 
 	# Lumière chaude de la suspension du salon, et un contre-jour froid pour détacher la silhouette.
 	var key := DirectionalLight3D.new()
+	_key = key
 	key.light_color = Color(1.0, 0.88, 0.72)
 	key.light_energy = 1.6
 	key.shadow_enabled = true
