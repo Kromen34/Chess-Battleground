@@ -58,9 +58,19 @@ court et à jour : si tu changes une convention, mets-la à jour ici.
   Collection stockée sur le serveur par SteamID **vérifié** : le client joint un ticket Steam Web API
   à HELLO, le serveur le fait valider par l'API Web Steam (`SteamWebAuth`). Catalogue provisoire : une
   carte = une figurine (les 21 dragons gardés), en attendant le modèle de carte de Nicolas.
-  Reste à faire pour la production : clé Web API éditeur (Steamworks) dans
-  `/opt/chessbg/secrets/steam.env` (`STEAM_WEB_API_KEY=...`), puis `bash tools/deployer_serveur.sh`.
-- Tests : 84 tests verts (`./tests.sh`).
+  **Déployé sur le VPS le 30/10** (clé Web API dans `/opt/chessbg/secrets/steam.env`, migration
+  `001_collections.sql` passée). Compte de Nicolas (SteamID 76561197978875357) : `dragon_a_lancier` ×1,
+  ajouté à la main pour tester (en SQL, comme superutilisateur `chessbg`).
+- Atelier de peinture (30/10, même branche) : bouton « Peindre cette figurine » dans la collection
+  (cartes possédées), `scenes/paint_studio.tscn`. Peinture en **couleurs de sommets** (pas d'UV) :
+  `src/view/figurine_paint.gd` (calques couleur + couverture + métal + rugosité par sommet, posés sur la
+  couleur de chaque pièce, multipliés par le lavis d'origine ; shader qui lit COLOR et CUSTOM0) et
+  `vertex_grid.gd` (sommets proches du pinceau). Outils : pinceau, gomme, brossage à sec (arêtes,
+  d'après le lavis), lavis (creux), fondu, pipette, remplissage d'une pièce ; taille en mm, dureté,
+  opacité, métal, brillance, symétrie, « rester sur la pièce », calques (mode Normal / Produit,
+  fusion), annuler / rétablir, capture. Enregistrement **local** `user://peintures/<carte>.peinture`
+  (pas encore sur le serveur) ; la collection affiche la figurine peinte. Pas encore vu par Nicolas.
+- Tests : 90 tests verts (`./tests.sh`).
 
 **Reprise le 30/10 :** d'abord la galerie (`feat/galerie-familles`) : Nicolas la teste, trie ses
 figurines avec « Mettre de côté », on ajuste la mise en page si besoin. Attention : Cavalier et
@@ -89,10 +99,9 @@ système de cartes/deck, factions et stats, dés de mouvement, compteurs sur la 
 s'il n'y est pas, vérifier avec `git lfs ls-files` avant de pousser. **Pas avant** que le
 dépôt soit privé (sinon = distribution des modèles sous licence).
 
-**Idée à long terme :** outil de peinture des figurines dans le jeu, style Photoshop (pas
-Paint) : dépliage UV (xatlas) dans `assembler_figurine.py`, peinture projetée écran -> texture,
-calques, pinceaux, pression tablette, canaux métal / brillance, et pinceaux de figuriniste
-qui exploitent creux et arêtes (lavis, brossage à sec). À concevoir avec Nicolas.
+**Peinture, suites possibles :** pression tablette, peinture sauvegardée sur le serveur (par
+joueur et par exemplaire), figurine peinte affichée en partie, et si le détail par sommet ne
+suffit pas : dépliage UV (xatlas) dans `assembler_figurine.py` et peinture en texture.
 
 À décider : passer le dépôt en privé pour versionner les modèles (LFS), mail de
 demande de licence jeu vidéo à Artisan Guild.
@@ -176,11 +185,13 @@ src/net/          Serveur dédié et client réseau (voir « Serveur dédié »)
   server_main.gd  Point d'entrée de scenes/server.tscn
 src/ai/           IA PvE. Un joueur comme un autre : reçoit un GameState, renvoie une Action.
 src/view/         Rendu 3D : lit le GameState, ne le modifie jamais directement.
+  figurine_paint.gd / vertex_grid.gd  Peinture des figurines (couleurs de sommets, calques)
   board_view.gd   Cases, figurines (GLB ou cylindre), clics ; signal board_built(bounds)
   tabletop_decor.gd  Table, pièce et lumière, construits autour du plateau
   camera_rig.gd   Caméra orbitale (souris)
 src/ui/           Menus et écrans (main_menu.gd = scène de démarrage, options_menu.gd,
-                  figurine_gallery.gd, collection_screen.gd ; figurine_stage.gd = présentoir 3D commun)
+                  figurine_gallery.gd, collection_screen.gd, paint_studio.gd ;
+                  figurine_stage.gd = présentoir 3D commun)
 src/platform/     steam_service.gd : autoload SteamService (init Steam, pseudo, avatar)
                   graphics_settings.gd : autoload GraphicsSettings (user://settings.cfg)
 addons/godotsteam GodotSteam 4.15 GDExtension (dernière version compatible Godot 4.3), binaires en LFS
