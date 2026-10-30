@@ -8,7 +8,7 @@ grille 8×8 en dur (obstacles, variantes de plateau futures).
 Ce fichier est lu par chaque session Claude Code, sur chaque PC. Il doit rester
 court et à jour : si tu changes une convention, mets-la à jour ici.
 
-## Où on en est (mis à jour le 29/10/2026)
+## Où on en est (mis à jour le 30/10/2026)
 
 À relire en début de session : c'est la mémoire partagée entre les PC.
 
@@ -51,22 +51,35 @@ court et à jour : si tu changes une convention, mets-la à jour ici.
   26298844), mise en ligne sur la branche default. Jeu non publié (page du store non soumise).
   En cours : le client Steam n'installait rien (dépôt pas encore ajouté au package 1505054) ;
   vérifier que l'installation depuis la bibliothèque marche après l'ajout.
-- Tests : 61 tests verts (`./tests.sh`).
+- Collection de cartes par joueur (30/10, branche `feat/collection` partie de `feat/galerie-familles`,
+  pas encore fusionnée ni déployée) : écran « Collection » au menu (`scenes/collection.tscn`), tout le
+  catalogue, cartes possédées avec « ×N », les autres grisées (figurine en silhouette), consultation seule.
+  Un joueur commence **sans aucune carte** (Nicolas offrira des boosters au départ, plus tard).
+  Collection stockée sur le serveur par SteamID **vérifié** : le client joint un ticket Steam Web API
+  à HELLO, le serveur le fait valider par l'API Web Steam (`SteamWebAuth`). Catalogue provisoire : une
+  carte = une figurine (les 21 dragons gardés), en attendant le modèle de carte de Nicolas.
+  Reste à faire pour la production : clé Web API éditeur (Steamworks) dans
+  `/opt/chessbg/secrets/steam.env` (`STEAM_WEB_API_KEY=...`), puis `bash tools/deployer_serveur.sh`.
+- Tests : 84 tests verts (`./tests.sh`).
 
 **Reprise le 30/10 :** d'abord la galerie (`feat/galerie-familles`) : Nicolas la teste, trie ses
 figurines avec « Mettre de côté », on ajuste la mise en page si besoin. Attention : Cavalier et
 Gardien utilisent `dragon_a_lancier` / `dragon_a_sauvage` (cylindres s'ils sont mis de côté).
 On travaille en local pour l'instant, pas de nouvel envoi sur Steam.
 
-**Prochaine étape choisie :** le **JcJ 1v1** sur le serveur, branche `feat/pvp` :
+**Après la collection :** la galerie déplace les .glb mis de côté, ce qui force Godot à les
+réimporter (cache indexé par chemin) : noter la mise de côté dans une liste au lieu de déplacer.
+
+**Ensuite :** le **JcJ 1v1** sur le serveur, branche `feat/pvp` :
 mise en relation (file d'attente ou code de partie), `ServerMatch` avec deux joueurs humains au
 lieu de l'IA, bouton « Jouer contre un ami » au menu, et deux fenêtres du jeu sans Steam sur un
 même PC pour tester. Ensuite : clé Steam pour un 2e compte (`Demander des clés Steam` dans
 Steamworks ; deux clients Steam ne tournent pas sur un même PC). Clé à un ami = distribution des
 figurines : pas sans licence écrite d'Artisan Guild.
 
-**Prochaines étapes du serveur :** authentification par ticket de session Steam, PostgreSQL
-(joueurs, decks, points), stats des figurines servies par le serveur.
+**Prochaines étapes du serveur :** boosters (fonction SQL d'ajout atomique, pas de droit d'écriture
+libre ; paiement via Steam ; boosters payants aléatoires = loot boxes : taux affichés, interdits en
+Belgique), decks, points, stats des figurines servies par le serveur.
 
 **Prochaines pistes (au choix de Nicolas) :** associer les dragons retenus aux unités,
 système de cartes/deck, factions et stats, dés de mouvement, compteurs sur la table.
@@ -144,6 +157,7 @@ rendu. Tout ce qui est dans `src/core/` doit être testable ainsi.
 
 ```
 src/core/         Logique pure (RefCounted / Resource) — ZÉRO nœud 3D, zéro Input, zéro réseau
+  cards/          CardDef (.tres dans cards/data/, un par carte), CardCatalog, CardCollection
   board.gd        Graphe de cases : Cell (id, position 3D, voisins par direction)
   generators/     Un générateur par forme de plateau (square_generator.gd = 1v1 8×8)
   units/          UnitType (Resource : PM, PA, PV, dégâts, portée) + Unit (instance en jeu)
@@ -156,6 +170,9 @@ src/net/          Serveur dédié et client réseau (voir « Serveur dédié »)
   server_match.gd Une partie côté serveur : GameState de référence + IA, signaux -> événements
   state_mirror.gd Côté client : applique les événements du serveur à la copie locale
   net_server.gd / net_client.gd  Transport ENet (paquets bruts, pas de RPC)
+  player_auth.gd  Identité des clients : SteamWebAuth (prod), DevPlayerAuth (--dev, local)
+  collection_store.gd  Collections en mémoire ; PostgrestCollectionStore (prod, PostgreSQL)
+  http_json.gd    Requêtes HTTP du serveur (API Web Steam, PostgREST)
   server_main.gd  Point d'entrée de scenes/server.tscn
 src/ai/           IA PvE. Un joueur comme un autre : reçoit un GameState, renvoie une Action.
 src/view/         Rendu 3D : lit le GameState, ne le modifie jamais directement.
@@ -163,7 +180,7 @@ src/view/         Rendu 3D : lit le GameState, ne le modifie jamais directement.
   tabletop_decor.gd  Table, pièce et lumière, construits autour du plateau
   camera_rig.gd   Caméra orbitale (souris)
 src/ui/           Menus et écrans (main_menu.gd = scène de démarrage, options_menu.gd,
-                  figurine_gallery.gd)
+                  figurine_gallery.gd, collection_screen.gd ; figurine_stage.gd = présentoir 3D commun)
 src/platform/     steam_service.gd : autoload SteamService (init Steam, pseudo, avatar)
                   graphics_settings.gd : autoload GraphicsSettings (user://settings.cfg)
 addons/godotsteam GodotSteam 4.15 GDExtension (dernière version compatible Godot 4.3), binaires en LFS
@@ -201,8 +218,18 @@ tools/            get_godot.sh, lancer_sans_gpu.bat, lancer_serveur.bat, deploye
 - Dés et tirages : uniquement côté serveur, via le RNG seedé du GameState.
 - Le menu rejoint le VPS par défaut. Serveur local : `tools\lancer_serveur.bat`, puis lancer
   le jeu avec `-- --server=127.0.0.1`. Port par défaut : 7777 (UDP).
-- Changement incompatible du protocole : incrémenter `Protocol.VERSION`.
-- BDD (PostgreSQL) côté serveur uniquement, jamais accessible par le client.
+- Changement incompatible du protocole : incrémenter `Protocol.VERSION` (v2 : identité Steam, collection).
+- Identité : le SteamID d'une session est celui renvoyé par l'API Web Steam pour le ticket du
+  HELLO, jamais celui annoncé par le client. Un SteamID voyage en texte (int64 > précision d'un
+  nombre JSON). Sans ticket valide : invité (pas de collection). Serveur local `--dev` : SteamID
+  annoncé cru sur parole (client `--steam-id=N` pour deux comptes sur un PC), `--dev-cards` : une
+  carte sur deux pour chaque joueur. Jamais `--dev` en production.
+- Collections : le client n'en reçoit qu'une copie pour l'affichage. Un `card_id` en BDD est
+  l'`id` d'un CardDef : ne jamais renommer l'id d'une carte déjà distribuée.
+- BDD (PostgreSQL) côté serveur uniquement, jamais accessible par le client. Le serveur Godot y
+  accède via PostgREST (conteneur sans port publié, schéma `api`, rôle `game_server` aux droits
+  minimaux). Schéma : `deploy/db/NNN_*.sql`, appliqués une fois par `deploy/migrer_bdd.sh` au
+  déploiement ; ne jamais modifier une migration déployée, en ajouter une.
 - Infra : d'abord un VPS OVH avec Docker Compose (serveur Godot headless qui gère N parties
   + PostgreSQL). Kubernetes/Agones seulement si la charge le justifie : le serveur ne garde
   en mémoire que les parties en cours, pour pouvoir passer à plusieurs instances.
@@ -218,7 +245,7 @@ tools/            get_godot.sh, lancer_sans_gpu.bat, lancer_serveur.bat, deploye
   relance). Stack dans `deploy/` : conteneur de jeu en lecture seule et sans privilèges,
   PostgreSQL sans port publié. Logs : `ssh chessbg 'cd /opt/chessbg/src/deploy && docker compose logs -f game'`.
 - Sur le VPS : `/opt/chessbg/src` (code déployé, écrasé à chaque déploiement),
-  `/opt/chessbg/secrets` (mot de passe BDD), `/opt/chessbg/backups` (dump quotidien 04:30,
+  `/opt/chessbg/secrets` (mots de passe BDD et PostgREST générés ; `steam.env` = clé Web API à poser à la main), `/opt/chessbg/backups` (dump quotidien 04:30,
   14 jours). Pas encore de copie des sauvegardes hors du VPS.
 - Docker contourne ufw pour les ports publiés : ne publier que 7777/udp.
 
