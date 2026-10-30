@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="CardDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/core/cards/card_def.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = &"draconien_f_empaleur_aile"
+display_name = "Draconien F, empaleur ailé"
+family = "Dragons"
+model_path = "res://Figurines/Dragons/draconien_f_empaleur_aile.glb"
