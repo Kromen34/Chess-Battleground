@@ -54,6 +54,9 @@ court et à jour : si tu changes une convention, mets-la à jour ici.
 - Collection de cartes par joueur (30/10, branche `feat/collection` partie de `feat/galerie-familles`,
   pas encore fusionnée ni déployée) : écran « Collection » au menu (`scenes/collection.tscn`), tout le
   catalogue, cartes possédées avec « ×N », les autres grisées (figurine en silhouette), consultation seule.
+  **Une figurine non peinte est toute grise** (sous-couche `FigurinePaint.PRIMER`, mate, lavis
+  conservé) : dans la collection et comme point de départ de l'atelier (décision de Nicolas, 30/10).
+  Le plateau de jeu et la galerie de tri gardent pour l'instant les couleurs d'origine des modèles.
   Un joueur commence **sans aucune carte** (Nicolas offrira des boosters au départ, plus tard).
   Collection stockée sur le serveur par SteamID **vérifié** : le client joint un ticket Steam Web API
   à HELLO, le serveur le fait valider par l'API Web Steam (`SteamWebAuth`). Catalogue provisoire : une

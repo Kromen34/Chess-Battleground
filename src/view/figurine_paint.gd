@@ -1,7 +1,7 @@
 class_name FigurinePaint
 extends RefCounted
 ## Peinture d'une figurine en couleurs de sommets (les modèles n'ont pas d'UV).
-## Chaque pièce (corps, tête, ailes…) part de sa couleur d'origine ; des calques de peinture
+## Une figurine non peinte est toute grise (sous-couche, PRIMER), lavis compris ; des calques de peinture
 ## (couleur + opacité + métal + rugosité par sommet) s'y empilent ; le résultat est multiplié
 ## par le lavis d'origine (creux assombris, arêtes éclaircies) qu'on garde intact.
 ## Sert à l'atelier de peinture et à l'affichage d'une figurine peinte dans la collection.
@@ -13,6 +13,9 @@ const SAVE_VERSION := 1
 const BLEND_NORMAL := 0
 const BLEND_MULTIPLY := 1
 const BLEND_NAMES: PackedStringArray = ["Normal", "Produit"]
+## Gris d'une figurine non peinte (sRGB), mat, comme une sous-couche grise.
+const PRIMER := Color(0.6, 0.6, 0.61)
+const PRIMER_FINISH := Vector2(0.0, 0.75)
 ## Les sommets sont codés part << INDEX_BITS | index dans la grille et l'historique.
 const INDEX_BITS := 20
 const INDEX_MASK := (1 << INDEX_BITS) - 1
@@ -43,7 +46,7 @@ class Part:
 	## Lavis d'origine (multiplicateur, linéaire) et sa luminance.
 	var wash: PackedColorArray
 	var wash_luma: PackedFloat32Array
-	## Couleur (linéaire) et finition (métal, rugosité) d'origine de la pièce.
+	## Couleur (linéaire) et finition (métal, rugosité) avant peinture : la sous-couche grise.
 	var base_color: Color
 	var base_finish: Vector2
 	var mesh: ArrayMesh
@@ -124,9 +127,8 @@ static func _make_part(mi: MeshInstance3D, xf: Transform3D) -> Part:
 	var part := Part.new()
 	part.name = String(mi.name)
 	part.node = mi
-	var mat := mi.get_active_material(0) as BaseMaterial3D
-	part.base_color = mat.albedo_color.srgb_to_linear() if mat != null else Color(0.5, 0.5, 0.5)
-	part.base_finish = Vector2(mat.metallic, mat.roughness) if mat != null else Vector2(0.0, 0.7)
+	part.base_color = PRIMER.srgb_to_linear()
+	part.base_finish = PRIMER_FINISH
 
 	var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL] if arrays[Mesh.ARRAY_NORMAL] != null else PackedVector3Array()
 	normals.resize(n)
@@ -205,6 +207,17 @@ func edge_factor(p: int, i: int) -> float:
 ## Part d'un creux (1 au fond, 0 sur le plat et les arêtes) : pour le lavis.
 func recess_factor(p: int, i: int) -> float:
 	return 1.0 - smoothstep(luma_low, luma_mid, parts[p].wash_luma[i])
+
+
+## Matériau d'une figurine non peinte, sans préparer la peinture (affichage rapide) :
+## le gris de la sous-couche multiplié par le lavis.
+static func primer_material() -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = PRIMER
+	mat.vertex_color_use_as_albedo = true
+	mat.metallic = PRIMER_FINISH.x
+	mat.roughness = PRIMER_FINISH.y
+	return mat
 
 
 # --- Calques ---------------------------------------------------------------------

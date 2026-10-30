@@ -4,6 +4,8 @@ extends TestCase
 
 var root: Node3D
 var paint: FigurinePaint
+## Sous-couche grise (linéaire) multipliée par le lavis du modèle de test (0,5).
+var grey: Color = FigurinePaint.PRIMER.srgb_to_linear() * 0.5
 
 
 func setup() -> void:
@@ -43,14 +45,14 @@ func test_attach_reads_parts() -> void:
 	var part := paint.parts[0]
 	assert_eq(part.name, "body")
 	assert_true(part.vertex_count() > 0)
-	assert_true(part.base_finish.is_equal_approx(Vector2(0.2, 0.8)))
-	assert_true(_near(paint.final_color(0, 0), Color(0.5, 0.5, 0.5)), "couleur de la pièce × lavis")
+	assert_true(part.base_finish.is_equal_approx(FigurinePaint.PRIMER_FINISH), "mat, quel que soit le matériau d'origine")
+	assert_true(_near(paint.final_color(0, 0), grey), "non peinte : sous-couche grise × lavis")
 
 
 func test_new_layer_is_transparent() -> void:
 	paint.layers.append(paint.new_layer("A"))
 	assert_eq(paint.layers[0].colors[0][0].a, 0.0, "resize() remplirait de noir opaque")
-	assert_true(_near(paint.final_color(0, 0), Color(0.5, 0.5, 0.5)), "un calque vide ne change rien")
+	assert_true(_near(paint.final_color(0, 0), grey), "un calque vide ne change rien")
 
 
 func test_normal_and_multiply_layers() -> void:
@@ -61,7 +63,7 @@ func test_normal_and_multiply_layers() -> void:
 	assert_true(_near(paint.final_color(0, 0), Color(0.5, 0, 0)), "couvre, puis lavis")
 	assert_true(paint.final_finish(0, 0).is_equal_approx(Vector2(1.0, 0.1)))
 	red.opacity = 0.5
-	assert_true(_near(paint.final_color(0, 0), Color(0.5, 0.25, 0.25)), "opacité du calque")
+	assert_true(_near(paint.final_color(0, 0), Color(0.5, 0, 0).lerp(grey, 0.5)), "opacité du calque")
 	red.opacity = 1.0
 	var shade := paint.new_layer("ombre")
 	shade.blend = FigurinePaint.BLEND_MULTIPLY

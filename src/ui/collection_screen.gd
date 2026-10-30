@@ -1,6 +1,7 @@
 extends Node3D
-## Écran Collection : toutes les cartes du jeu, celles du joueur en couleur avec leur
-## nombre d'exemplaires, les autres grisées (figurine en silhouette). Consultation seule.
+## Écran Collection : toutes les cartes du jeu, celles du joueur avec leur nombre
+## d'exemplaires (figurine grise tant qu'elle n'est pas peinte, sinon avec sa peinture),
+## les autres grisées (figurine en silhouette unie). Consultation seule.
 ## La collection vient du serveur (elle y est stockée, par SteamID vérifié) : l'écran se
 ## connecte, envoie HELLO avec le ticket Steam, demande la collection, puis se déconnecte.
 ## - panneau de gauche ou flèches haut / bas : famille ; liste des cartes cliquable ;
@@ -26,6 +27,7 @@ var _index: int = 0
 
 var _stage: FigurineStage
 var _silhouette: StandardMaterial3D
+var _primer: StandardMaterial3D
 var _family_list: ItemList
 var _card_list: ItemList
 var _total_label: Label
@@ -40,9 +42,12 @@ func _ready() -> void:
 	_families = _catalog.families()
 	_stage = FigurineStage.new()
 	add_child(_stage)
+	# Lumière blanche : sous la lumière chaude du salon, le gris des figurines tire sur le beige.
+	_stage.set_neutral_light(true)
 	_silhouette = StandardMaterial3D.new()
 	_silhouette.albedo_color = Color(0.2, 0.2, 0.22)
 	_silhouette.roughness = 0.9
+	_primer = FigurinePaint.primer_material()
 	_build_ui()
 	_select_card(PaintStudio.card_id)
 	_refresh_lists()
@@ -176,7 +181,7 @@ func _show(i: int) -> void:
 		_owned_label.text = "Possédée : %d exemplaire%s" % [n, "s" if n > 1 else ""]
 	else:
 		_owned_label.text = "Pas encore obtenue"
-	var shown := _stage.show_model(card.model_path, null if n > 0 else _silhouette)
+	var shown := _stage.show_model(card.model_path, _primer if n > 0 else _silhouette)
 	if not shown:
 		_owned_label.text += " · modèle absent sur ce PC"
 	elif n > 0 and FigurinePaint.has_save(card.id):
