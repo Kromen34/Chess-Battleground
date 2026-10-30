@@ -50,8 +50,10 @@ const PALETTE := [
 	["Fer noirci", Color(0.25, 0.25, 0.27), 1.0, 0.4], ["Gemme rouge", Color(0.75, 0.02, 0.10), 0.0, 0.95],
 ]
 
-## Carte à peindre, posée par l'écran Collection avant d'ouvrir l'atelier.
+## Carte et exemplaire (à partir de 1) à peindre, posés par l'écran Collection avant
+## d'ouvrir l'atelier. Chaque exemplaire a sa propre peinture.
 static var card_id: StringName = &""
+static var copy: int = 1
 
 var _card: CardDef
 var _paint: FigurinePaint
@@ -137,13 +139,13 @@ func _prepare() -> void:
 	if _card == null:
 		_set_status("Carte inconnue : %s" % card_id)
 		return
-	_title.text = "Atelier de peinture : %s" % _card.display_name
+	_title.text = "Atelier de peinture : %s, exemplaire %d" % [_card.display_name, copy]
 	if not _stage.show_model(_card.model_path):
 		_set_status("Modèle absent sur ce PC : %s" % _card.model_path)
 		return
 	var t := Time.get_ticks_msec()
 	_paint = FigurinePaint.attach(_stage.model())
-	if not _paint.load_saved(_card.id):
+	if not _paint.load_saved(_card.id, copy):
 		_paint.layers.append(_paint.new_layer("Sous-couche"))
 	_active = _paint.layers.size() - 1
 	var positions: Array[PackedVector3Array] = []
@@ -721,7 +723,7 @@ func _set_color(c: Color) -> void:
 func _save() -> void:
 	if _paint == null or _card == null:
 		return
-	var err := _paint.save(_card.id)
+	var err := _paint.save(_card.id, copy)
 	if err == OK:
 		_unsaved = false
 		_set_status("Peinture enregistrée.")
@@ -743,7 +745,7 @@ func _capture() -> void:
 	_layer_ui.visible = true
 	DirAccess.make_dir_recursive_absolute(CAPTURE_DIR)
 	var stamp := Time.get_datetime_string_from_system().replace(":", "-")
-	var path := CAPTURE_DIR + "%s_%s.png" % [_card.id if _card != null else &"figurine", stamp]
+	var path := CAPTURE_DIR + "%s_%d_%s.png" % [_card.id if _card != null else &"figurine", copy, stamp]
 	var err := image.save_png(path)
 	_set_status("Capture : %s" % ProjectSettings.globalize_path(path) if err == OK else "Capture impossible.")
 

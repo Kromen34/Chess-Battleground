@@ -108,6 +108,21 @@ func test_save_roundtrip_and_mismatch() -> void:
 	assert_eq(paint.layers.size(), 1, "les calques actuels restent")
 
 
+func test_one_save_per_copy() -> void:
+	assert_ne(FigurinePaint.save_path(&"onixia", 1), FigurinePaint.save_path(&"onixia", 2))
+	var layer := paint.new_layer("Rouge")
+	layer.colors[0][0] = Color(1, 0, 0, 1)
+	paint.layers.append(layer)
+	var card := &"test_exemplaires"
+	assert_eq(paint.save(card, 2), OK)
+	assert_true(FigurinePaint.has_save(card, 2))
+	assert_false(FigurinePaint.has_save(card, 1), "l'exemplaire 1 n'est pas peint")
+	paint.layers.clear()
+	assert_true(paint.load_saved(card, 2))
+	assert_eq(paint.layers[0].colors[0][0], Color(1, 0, 0, 1))
+	DirAccess.remove_absolute(FigurinePaint.save_path(card, 2))
+
+
 func test_vertex_grid_matches_brute_force() -> void:
 	var positions: Array[PackedVector3Array] = [paint.parts[0].positions]
 	var grid := VertexGrid.new(positions, 0.1)

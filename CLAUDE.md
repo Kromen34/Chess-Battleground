@@ -65,8 +65,12 @@ court et à jour : si tu changes une convention, mets-la à jour ici.
   la galerie (`FigurineGallery.is_on_hold`) : le tri de la galerie décide de ce qu'elle montre.
   Nouvelle figurine (nouveau kit) = ajouter son `.tres`, sinon elle n'apparaît pas dans la collection.
   **Déployé sur le VPS le 30/10** (clé Web API dans `/opt/chessbg/secrets/steam.env`, migration
-  `001_collections.sql` passée). Compte de Nicolas (SteamID 76561197978875357) : `dragon_a_lancier` ×1,
-  ajouté à la main pour tester (en SQL, comme superutilisateur `chessbg`).
+  `001_collections.sql` passée). Compte de Nicolas (SteamID 76561197978875357) : `dragon_a_lancier` ×3,
+  ajoutés à la main pour tester (en SQL, comme superutilisateur `chessbg`). **Vérifié de bout en bout
+  le 30/10** : vrai ticket Steam validé par le VPS, collection lue dans PostgreSQL.
+  Plusieurs exemplaires d'une carte : sélecteur « ◀ Exemplaire 2 / 3 ▶ » (Page préc. / suiv.), chacun
+  avec sa propre peinture (`user://peintures/<carte>_<exemplaire>.peinture`). Les exemplaires ne
+  sont pas encore distingués sur le serveur (seulement une quantité).
 - Atelier de peinture (30/10, même branche) : bouton « Peindre cette figurine » dans la collection
   (cartes possédées), `scenes/paint_studio.tscn`. Peinture en **couleurs de sommets** (pas d'UV) :
   `src/view/figurine_paint.gd` (calques couleur + couverture + métal + rugosité par sommet, posés sur la
@@ -84,6 +88,8 @@ outils : rond, carré, losange, plat, éponge, moucheté, poils ; angle, rondeur
 figurines avec « Mettre de côté », on ajuste la mise en page si besoin. Attention : Cavalier et
 Gardien utilisent `dragon_a_lancier` / `dragon_a_sauvage` (cylindres s'ils sont mis de côté).
 On travaille en local pour l'instant, pas de nouvel envoi sur Steam.
+
+**Interface :** Nicolas veut la rendre plus jolie plus tard (collection, atelier) ; fonctionnelle pour l'instant.
 
 **Après la collection :** la galerie déplace les .glb mis de côté, ce qui force Godot à les
 réimporter (cache indexé par chemin) : noter la mise de côté dans une liste au lieu de déplacer.

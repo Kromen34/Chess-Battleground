@@ -348,12 +348,13 @@ func flush() -> void:
 
 # --- Enregistrement --------------------------------------------------------------
 
-static func save_path(card_id: StringName) -> String:
-	return SAVE_DIR + String(card_id) + ".peinture"
+## Une peinture par exemplaire d'une carte : [copy] = numéro de l'exemplaire, à partir de 1.
+static func save_path(card_id: StringName, copy: int = 1) -> String:
+	return SAVE_DIR + "%s_%d.peinture" % [card_id, copy]
 
 
-static func has_save(card_id: StringName) -> bool:
-	return FileAccess.file_exists(save_path(card_id))
+static func has_save(card_id: StringName, copy: int = 1) -> bool:
+	return FileAccess.file_exists(save_path(card_id, copy))
 
 
 func to_dict() -> Dictionary:
@@ -403,9 +404,9 @@ func load_dict(d: Dictionary) -> bool:
 	return true
 
 
-func save(card_id: StringName) -> Error:
+func save(card_id: StringName, copy: int = 1) -> Error:
 	DirAccess.make_dir_recursive_absolute(SAVE_DIR)
-	var f := FileAccess.open_compressed(save_path(card_id), FileAccess.WRITE, FileAccess.COMPRESSION_ZSTD)
+	var f := FileAccess.open_compressed(save_path(card_id, copy), FileAccess.WRITE, FileAccess.COMPRESSION_ZSTD)
 	if f == null:
 		return FileAccess.get_open_error()
 	f.store_var(to_dict())
@@ -413,10 +414,10 @@ func save(card_id: StringName) -> Error:
 	return OK
 
 
-func load_saved(card_id: StringName) -> bool:
-	if not has_save(card_id):
+func load_saved(card_id: StringName, copy: int = 1) -> bool:
+	if not has_save(card_id, copy):
 		return false
-	var f := FileAccess.open_compressed(save_path(card_id), FileAccess.READ, FileAccess.COMPRESSION_ZSTD)
+	var f := FileAccess.open_compressed(save_path(card_id, copy), FileAccess.READ, FileAccess.COMPRESSION_ZSTD)
 	if f == null:
 		return false
 	var data: Variant = f.get_var()

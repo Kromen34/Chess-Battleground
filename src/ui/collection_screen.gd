@@ -7,6 +7,8 @@ extends Node3D
 ## connecte, envoie HELLO avec le ticket Steam, demande la collection, puis se déconnecte.
 ## - panneau de gauche ou flèches haut / bas : famille ; liste des cartes cliquable ;
 ## - flèches gauche / droite (ou boutons à l'écran) : carte précédente / suivante ;
+## - Page préc. / Page suiv. (ou ◀ ▶ sous le nom) : exemplaire précédent / suivant, chacun
+##   avec sa propre peinture ;
 ## - souris : voir FigurineStage (tourner, zoomer) ; Échap : menu.
 
 const MENU_SCENE := "res://scenes/main_menu.tscn"
@@ -39,6 +41,11 @@ var _name_label: Label
 var _owned_label: Label
 var _status_label: Label
 var _paint_button: Button
+## Exemplaire affiché de la carte (à partir de 1), et la carte à laquelle il se rapporte.
+var _copy: int = 1
+var _copy_card: StringName = &""
+var _copy_row: HBoxContainer
+var _copy_label: Label
 
 
 func _ready() -> void:
@@ -54,6 +61,8 @@ func _ready() -> void:
 	_primer = FigurinePaint.primer_material()
 	_build_ui()
 	_select_card(PaintStudio.card_id)
+	_copy = PaintStudio.copy
+	_copy_card = PaintStudio.card_id
 	_refresh_lists()
 	_connect()
 
@@ -79,6 +88,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		_select_family(_family - 1)
 	elif event.is_action_pressed("ui_down"):
 		_select_family(_family + 1)
+	elif event.is_action_pressed("ui_page_up"):
+		_show_copy(_copy - 1)
+	elif event.is_action_pressed("ui_page_down"):
+		_show_copy(_copy + 1)
 
 
 # --- Serveur ---------------------------------------------------------------------
@@ -200,19 +213,39 @@ func _show(i: int) -> void:
 	_card_list.ensure_current_is_visible()
 	_name_label.text = card.display_name
 	_name_label.modulate = Color.WHITE if n > 0 else LOCKED_COLOR
+	# Nouvelle carte : on repart du premier exemplaire.
+	if card.id != _copy_card:
+		_copy_card = card.id
+		_copy = 1
+	_copy = clampi(_copy, 1, maxi(1, n))
+	var painted := n > 0 and FigurinePaint.has_save(card.id, _copy)
 	if n > 0:
 		_owned_label.text = "Possédée : %d exemplaire%s" % [n, "s" if n > 1 else ""]
 	else:
 		_owned_label.text = "Pas encore obtenue"
+	_copy_row.visible = n > 1
+	_copy_label.text = "Exemplaire %d / %d · %s" % [_copy, n, "peint" if painted else "non peint"]
 	var shown := _stage.show_model(card.model_path, _primer if n > 0 else _silhouette)
 	if not shown:
 		_owned_label.text += " · modèle absent sur ce PC"
-	elif n > 0 and FigurinePaint.has_save(card.id):
+	elif painted:
 		var paint := FigurinePaint.attach(_stage.model())
-		paint.load_saved(card.id)
+		paint.load_saved(card.id, _copy)
 		paint.flush()
 	# Seules les figurines possédées se peignent.
 	_paint_button.visible = n > 0 and shown
+	_paint_button.text = "Peindre l'exemplaire %d" % _copy if n > 1 else "Peindre cette figurine"
+
+
+## Passe à l'exemplaire [c] de la carte affichée (la liste boucle).
+func _show_copy(c: int) -> void:
+	if _cards.is_empty():
+		return
+	var n := _count_of(_cards[_index])
+	if n <= 1:
+		return
+	_copy = posmod(c - 1, n) + 1
+	_show(_index)
 
 
 func _build_ui() -> void:
@@ -227,6 +260,24 @@ func _build_ui() -> void:
 	_name_label = _label(top, 34)
 	_owned_label = _label(top, 20)
 	_owned_label.modulate = Color(1, 1, 1, 0.75)
+	_copy_row = HBoxContainer.new()
+	_copy_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	_copy_row.visible = false
+	var prev_copy := Button.new()
+	prev_copy.text = "◀"
+	prev_copy.tooltip_text = "Exemplaire précédent (Page préc.)"
+	prev_copy.focus_mode = Control.FOCUS_NONE
+	prev_copy.pressed.connect(func() -> void: _show_copy(_copy - 1))
+	_copy_row.add_child(prev_copy)
+	_copy_label = _label(_copy_row, 20)
+	_copy_label.custom_minimum_size = Vector2(280, 0)
+	var next_copy := Button.new()
+	next_copy.text = "▶"
+	next_copy.tooltip_text = "Exemplaire suivant (Page suiv.)"
+	next_copy.focus_mode = Control.FOCUS_NONE
+	next_copy.pressed.connect(func() -> void: _show_copy(_copy + 1))
+	_copy_row.add_child(next_copy)
+	top.add_child(_copy_row)
 	_paint_button = Button.new()
 	_paint_button.text = "Peindre cette figurine"
 	_paint_button.add_theme_font_size_override("font_size", 18)
@@ -235,6 +286,7 @@ func _build_ui() -> void:
 	_paint_button.visible = false
 	_paint_button.pressed.connect(func() -> void:
 		PaintStudio.card_id = _cards[_index].id
+		PaintStudio.copy = _copy
 		get_tree().change_scene_to_file(PAINT_SCENE))
 	top.add_child(_paint_button)
 
@@ -266,7 +318,7 @@ func _build_ui() -> void:
 	layer.add_child(back)
 
 	var help := Label.new()
-	help.text = "↑ ↓ : famille · ← → : carte · clic enfoncé : tourner · molette : zoom · clic molette : vue de départ · Échap : menu"
+	help.text = "↑ ↓ : famille · ← → : carte · Page préc. / suiv. : exemplaire · clic enfoncé : tourner · molette : zoom · clic molette : vue de départ · Échap : menu"
 	help.add_theme_font_size_override("font_size", 16)
 	help.modulate = Color(1, 1, 1, 0.6)
 	help.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
