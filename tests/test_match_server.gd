@@ -161,3 +161,92 @@ func test_disconnect_removes_vs_ai_match() -> void:
 	_send(PEER, Protocol.hello())
 	assert_false(inbox.get(PEER, []).any(func(m: Dictionary) -> bool: return Protocol.type_of(m) == Protocol.WELCOME),
 		"un client déconnecté n'a plus de session")
+
+
+# --- Comptes et collections -------------------------------------------------------
+
+## Connecte un client authentifié par DevPlayerAuth sous [steam_id]. Retourne le WELCOME.
+func _hello_as(steam_id: int, peer_id: int = PEER) -> Dictionary:
+	server.auth = DevPlayerAuth.new()
+	server.peer_connected(peer_id)
+	_send(peer_id, Protocol.hello("", steam_id))
+	return _last(peer_id)
+
+
+func test_default_auth_makes_guests() -> void:
+	server.peer_connected(PEER)
+	_send(PEER, Protocol.hello("", 76561197960287930))
+	var welcome := _last(PEER)
+	assert_eq(Protocol.type_of(welcome), Protocol.WELCOME)
+	assert_eq(Protocol.parse_steam_id(welcome.get("steam_id")), 0, "SteamID annoncé non cru sans vérification")
+	_send(PEER, Protocol.get_collection())
+	assert_eq(Protocol.type_of(_last(PEER)), Protocol.ERROR, "pas de collection pour un invité")
+
+
+func test_collection_of_authenticated_player() -> void:
+	var big := 76561197960287930
+	server.collections.starter = {"onixia": 2}
+	var welcome := _hello_as(big)
+	assert_eq(Protocol.parse_steam_id(welcome.get("steam_id")), big)
+	_send(PEER, Protocol.get_collection())
+	var msg := _last(PEER)
+	assert_eq(Protocol.type_of(msg), Protocol.COLLECTION)
+	assert_eq(CardCollection.from_dict(msg.get("cards")).to_dict(), {"onixia": 2})
+
+
+func test_collections_are_per_player() -> void:
+	_hello_as(111, 1)
+	_hello_as(222, 2)
+	# Simule un gain de cartes pour le joueur 111 seulement.
+	server.collections.load_collection(111, _ignore)
+	(server.collections._collections[111] as CardCollection).add(&"onixia")
+	_send(1, Protocol.get_collection())
+	_send(2, Protocol.get_collection())
+	assert_eq(CardCollection.from_dict(_last(1).get("cards")).count_of(&"onixia"), 1)
+	assert_eq(CardCollection.from_dict(_last(2).get("cards")).count_of(&"onixia"), 0)
+
+
+func _ignore(_c: CardCollection) -> void:
+	pass
+
+
+func test_second_hello_is_refused() -> void:
+	_hello_as(111)
+	_send(PEER, Protocol.hello("", 222))
+	assert_eq(Protocol.type_of(_last(PEER)), Protocol.ERROR, "on ne change pas d'identité en cours de session")
+
+
+func test_messages_wait_for_authentication() -> void:
+	var pending := PendingAuth.new()
+	server.auth = pending
+	server.peer_connected(PEER)
+	_send(PEER, Protocol.hello())
+	_send(PEER, Protocol.get_collection())
+	assert_eq(Protocol.type_of(_last(PEER)), Protocol.ERROR, "rien avant la fin de la vérification")
+	pending.finish(333)
+	assert_eq(Protocol.type_of(_last(PEER)), Protocol.WELCOME)
+
+
+func test_disconnect_during_authentication() -> void:
+	var pending := PendingAuth.new()
+	server.auth = pending
+	server.peer_connected(PEER)
+	_send(PEER, Protocol.hello())
+	server.peer_disconnected(PEER)
+	_take(PEER)
+	pending.finish(333)
+	assert_true(_take(PEER).is_empty(), "rien envoyé à un client parti")
+
+
+## Vérification qui ne répond que quand le test appelle finish() (comme une requête HTTP).
+class PendingAuth extends PlayerAuth:
+	var _done: Callable
+
+	func authenticate(_hello: Dictionary, done: Callable) -> void:
+		_done = done
+
+	func finish(steam_id: int) -> void:
+		# On lâche le rappel : il référence le serveur, qui référence cette vérification.
+		var done := _done
+		_done = Callable()
+		done.call(steam_id)

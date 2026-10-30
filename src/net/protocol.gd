@@ -4,12 +4,14 @@ extends RefCounted
 ## JSON plutôt que var_to_bytes : rien d'exécutable ne peut transiter, et un
 ## futur serveur ou outil dans un autre langage pourra lire le même format.
 ##
-## Champ "t" = type du message. Client -> serveur : HELLO, START_VS_AI, ACTION, SYNC.
-## Serveur -> client : WELCOME, MATCH_STARTED, EVENTS, REFUSED, STATE, ERROR.
+## Champ "t" = type du message. Client -> serveur : HELLO, START_VS_AI, ACTION, SYNC,
+## GET_COLLECTION. Serveur -> client : WELCOME, MATCH_STARTED, EVENTS, REFUSED, STATE,
+## COLLECTION, ERROR.
 ## Attention : JSON rend tous les nombres en float, toujours relire avec int().
+## Un SteamID (int64) ne tient pas dans un float : il voyage toujours en texte.
 
 ## À incrémenter à chaque changement incompatible du protocole.
-const VERSION := 1
+const VERSION := 2
 const DEFAULT_PORT := 7777
 ## Taille max d'un message reçu par le serveur (un client n'a rien de gros à envoyer).
 const MAX_CLIENT_PACKET_BYTES := 4096
@@ -20,12 +22,14 @@ const HELLO := "hello"
 const START_VS_AI := "start_vs_ai"
 const ACTION := "action"
 const SYNC := "sync"
+const GET_COLLECTION := "get_collection"
 
 const WELCOME := "welcome"
 const MATCH_STARTED := "match_started"
 const EVENTS := "events"
 const REFUSED := "refused"
 const STATE := "state"
+const COLLECTION := "collection"
 const ERROR := "error"
 
 
@@ -75,14 +79,61 @@ static func sanitize_action(v: Variant) -> Dictionary:
 			return {}
 
 
+## Ticket Steam d'un HELLO : hexadécimal, au plus 2560 octets (limite de Steam).
+## "" s'il est absent ou mal formé.
+static func ticket_of(hello_msg: Dictionary) -> String:
+	var t: Variant = hello_msg.get("ticket")
+	if typeof(t) != TYPE_STRING:
+		return ""
+	var ticket: String = t
+	if ticket.length() > 2 * 2560 or ticket.length() % 2 != 0 \
+			or ticket[0] in "+-" or not ticket.is_valid_hex_number():
+		return ""
+	return ticket
+
+
+## SteamID annoncé dans un HELLO (non vérifié !), 0 s'il est absent ou mal formé.
+static func claimed_steam_id(hello_msg: Dictionary) -> int:
+	return parse_steam_id(hello_msg.get("steam_id"))
+
+
+## SteamID transmis en texte (décimal) -> int, 0 s'il est invalide.
+static func parse_steam_id(v: Variant) -> int:
+	if typeof(v) != TYPE_STRING:
+		return 0
+	var s: String = v
+	if s.is_empty() or s.length() > 19 or not s.is_valid_int() or s.begins_with("-") or s.begins_with("+"):
+		return 0
+	return s.to_int()
+
+
 static func is_number(v: Variant) -> bool:
 	return typeof(v) == TYPE_INT or typeof(v) == TYPE_FLOAT
 
 
 # --- Messages ------------------------------------------------------------------
 
-static func hello() -> Dictionary:
-	return {"t": HELLO, "version": VERSION}
+## [ticket] : ticket Steam Web API en hexadécimal (vide sans Steam). [steam_id] : SteamID
+## annoncé, que seul un serveur de développement (--dev) croit sur parole.
+static func hello(ticket: String = "", steam_id: int = 0) -> Dictionary:
+	var msg := {"t": HELLO, "version": VERSION}
+	if ticket != "":
+		msg["ticket"] = ticket
+	if steam_id != 0:
+		msg["steam_id"] = str(steam_id)
+	return msg
+
+
+static func welcome(steam_id: int) -> Dictionary:
+	return {"t": WELCOME, "version": VERSION, "steam_id": str(steam_id)}
+
+
+static func get_collection() -> Dictionary:
+	return {"t": GET_COLLECTION}
+
+
+static func collection(c: CardCollection) -> Dictionary:
+	return {"t": COLLECTION, "cards": c.to_dict()}
 
 
 static func start_vs_ai() -> Dictionary:

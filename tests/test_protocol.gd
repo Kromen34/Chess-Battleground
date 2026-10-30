@@ -35,3 +35,25 @@ func test_sanitize_action_rejects_malformed() -> void:
 	assert_true(Protocol.sanitize_action({"type": "move", "unit": 1, "to": 5}).is_empty())
 	assert_true(Protocol.sanitize_action({"type": "attack", "unit": 1}).is_empty())
 	assert_true(Protocol.sanitize_action({"type": "teleport", "unit": 1}).is_empty())
+
+
+func test_hello_carries_steam_id_as_text() -> void:
+	var big := 76561197960287930
+	var msg := Protocol.decode(Protocol.encode(Protocol.hello("0aff", big)), Protocol.MAX_CLIENT_PACKET_BYTES)
+	assert_eq(typeof(msg["steam_id"]), TYPE_STRING, "un int64 ne tient pas dans un nombre JSON")
+	assert_eq(Protocol.claimed_steam_id(msg), big)
+	assert_eq(Protocol.ticket_of(msg), "0aff")
+	var bare := Protocol.hello()
+	assert_false(bare.has("ticket") or bare.has("steam_id"), "rien sans Steam")
+
+
+func test_parse_steam_id_rejects_garbage() -> void:
+	for bad: Variant in [null, 5, 7.0, "", "abc", "-12", "+12", "12a", "99999999999999999999"]:
+		assert_eq(Protocol.parse_steam_id(bad), 0, "refusé : %s" % [bad])
+	assert_eq(Protocol.parse_steam_id("42"), 42)
+
+
+func test_ticket_of_rejects_garbage() -> void:
+	for bad: Variant in [null, 12, "xyz", "abc", "-0ff", "0x0f", "ab".repeat(2561)]:
+		assert_eq(Protocol.ticket_of({"ticket": bad}), "", "refusé : %s" % [bad])
+	assert_eq(Protocol.ticket_of({"ticket": "00FFab"}), "00FFab")

@@ -6,6 +6,7 @@ extends RefCounted
 ##
 ## Le serveur fait autorité : le numéro de joueur d'un client vient de sa session,
 ## jamais du message, et chaque action passe par Rules sur le GameState du serveur.
+## De même, son SteamID est celui vérifié par [member auth] à la réception du HELLO.
 
 signal message_out(peer_id: int, msg: Dictionary)
 ## Émis à la fin d'une partie, avant sa suppression. C'est là qu'on créditera les
@@ -14,7 +15,12 @@ signal match_finished(match_id: int, winner: int, peers: Dictionary)
 
 ## Tire la graine de chaque partie. Exposé pour rendre les tests déterministes.
 var seed_rng := RandomNumberGenerator.new()
-## peer_id -> {"ready": bool, "match": int, "player": int}
+## Vérifie l'identité Steam des clients. Par défaut, personne n'est reconnu (invités).
+var auth := PlayerAuth.new()
+## Collections de cartes des joueurs. Par défaut en mémoire.
+var collections := CollectionStore.new()
+## peer_id -> {"ready": bool, "authenticating": bool, "steam_id": int (0 = invité),
+## "match": int, "player": int}
 var _sessions: Dictionary = {}
 ## match_id -> ServerMatch
 var _matches: Dictionary = {}
@@ -34,7 +40,7 @@ func get_match(match_id: int) -> ServerMatch:
 
 
 func peer_connected(peer_id: int) -> void:
-	_sessions[peer_id] = {"ready": false, "match": -1, "player": -1}
+	_sessions[peer_id] = {"ready": false, "authenticating": false, "steam_id": 0, "match": -1, "player": -1}
 
 
 func peer_disconnected(peer_id: int) -> void:
@@ -67,17 +73,29 @@ func handle_message(peer_id: int, msg: Dictionary) -> void:
 			_on_action(peer_id, session, msg)
 		Protocol.SYNC:
 			_on_sync(peer_id, session)
+		Protocol.GET_COLLECTION:
+			_on_get_collection(peer_id, session)
 		_:
 			_send(peer_id, Protocol.error("message inconnu : %s" % t))
 
 
 func _on_hello(peer_id: int, session: Dictionary, msg: Dictionary) -> void:
+	if session["ready"] or session["authenticating"]:
+		_send(peer_id, Protocol.error("hello déjà reçu"))
+		return
 	var version: Variant = msg.get("version")
 	if not Protocol.is_number(version) or int(version) != Protocol.VERSION:
 		_send(peer_id, Protocol.error("version du jeu incompatible, mets le jeu à jour"))
 		return
-	session["ready"] = true
-	_send(peer_id, {"t": Protocol.WELCOME, "version": Protocol.VERSION})
+	session["authenticating"] = true
+	auth.authenticate(msg, func(steam_id: int) -> void:
+		# Le client a pu se déconnecter pendant la vérification du ticket.
+		if not is_same(_sessions.get(peer_id), session):
+			return
+		session["authenticating"] = false
+		session["ready"] = true
+		session["steam_id"] = steam_id
+		_send(peer_id, Protocol.welcome(steam_id)))
 
 
 func _on_start_vs_ai(peer_id: int, session: Dictionary) -> void:
@@ -120,6 +138,20 @@ func _on_sync(peer_id: int, session: Dictionary) -> void:
 		return
 	var player := int(session["player"])
 	_send(peer_id, {"t": Protocol.STATE, "player": player, "state": m.state.to_view_dict(player)})
+
+
+func _on_get_collection(peer_id: int, session: Dictionary) -> void:
+	var steam_id := int(session["steam_id"])
+	if steam_id == 0:
+		_send(peer_id, Protocol.error("collection indisponible : lance le jeu depuis Steam"))
+		return
+	collections.load_collection(steam_id, func(c: CardCollection) -> void:
+		if not is_same(_sessions.get(peer_id), session):
+			return
+		if c == null:
+			_send(peer_id, Protocol.error("collection indisponible pour le moment, réessaie plus tard"))
+			return
+		_send(peer_id, Protocol.collection(c)))
 
 
 ## Envoie les événements en attente à tous les humains de la partie, et clôt

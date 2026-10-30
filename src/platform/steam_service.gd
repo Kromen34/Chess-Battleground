@@ -16,6 +16,12 @@ const DEFAULT_NAME := "Joueur"
 const AVATAR_LARGE := 3
 ## Valeur de Steam.STEAM_API_INIT_RESULT_OK.
 const INIT_OK := 0
+## Valeur de Steam.RESULT_OK.
+const RESULT_OK := 1
+## Service auquel sont destinés nos tickets Web API : doit valoir SteamWebAuth.IDENTITY.
+const WEB_API_IDENTITY := "chessbg-server"
+## Délai max d'attente du ticket : sans réponse de Steam, on se connecte en invité.
+const TICKET_TIMEOUT := 10.0
 
 var available: bool = false
 var persona_name: String = DEFAULT_NAME
@@ -26,6 +32,8 @@ var avatar: Texture2D = null
 var unavailable_reason: String = ""
 
 var _steam: Object = null
+## Ticket Web API en cours (0 = aucun), annulé au suivant.
+var _ticket_handle: int = 0
 
 
 func _ready() -> void:
@@ -60,6 +68,52 @@ func _process(_delta: float) -> void:
 	# Steam ne livre ses réponses (avatar, etc.) que si on pompe ses callbacks.
 	if available:
 		_steam.call("run_callbacks")
+
+
+## SteamID à annoncer au serveur : --steam-id=N s'il est donné (tests à deux fenêtres
+## sans Steam ; seul un serveur lancé avec --dev le croit), sinon le vrai.
+func claimed_steam_id() -> int:
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--steam-id="):
+			return a.trim_prefix("--steam-id=").to_int()
+	return steam_id
+
+
+## Demande à Steam un ticket qui prouve l'identité du joueur au serveur (le serveur le
+## fait valider par l'API Web de Steam). Appelle [done] une seule fois, avec le ticket
+## en hexadécimal, ou "" sans Steam, en cas d'échec ou après TICKET_TIMEOUT.
+func request_server_ticket(done: Callable) -> void:
+	if not available:
+		done.call("")
+		return
+	if _ticket_handle != 0:
+		_steam.call("cancelAuthTicket", _ticket_handle)
+	var state := {"done": false}
+	var finish := func(ticket: String) -> void:
+		if not state["done"]:
+			state["done"] = true
+			done.call(ticket)
+	var on_ticket := func(handle: int, result: int, size: int, buffer: Variant) -> void:
+		if handle == _ticket_handle:
+			finish.call(ticket_to_hex(buffer, size) if result == RESULT_OK else "")
+	_steam.connect("get_ticket_for_web_api", on_ticket, CONNECT_ONE_SHOT)
+	_ticket_handle = int(_steam.call("getAuthTicketForWebApi", WEB_API_IDENTITY))
+	get_tree().create_timer(TICKET_TIMEOUT).timeout.connect(func() -> void:
+		if _steam.is_connected("get_ticket_for_web_api", on_ticket):
+			_steam.disconnect("get_ticket_for_web_api", on_ticket)
+		finish.call(""))
+
+
+## Ticket reçu de GodotSteam (PackedByteArray ou Array d'octets) -> hexadécimal.
+static func ticket_to_hex(buffer: Variant, size: int) -> String:
+	var bytes := PackedByteArray()
+	if typeof(buffer) == TYPE_PACKED_BYTE_ARRAY:
+		bytes = buffer
+	elif typeof(buffer) == TYPE_ARRAY:
+		bytes = PackedByteArray(buffer as Array)
+	if size >= 0 and size < bytes.size():
+		bytes = bytes.slice(0, size)
+	return bytes.hex_encode()
 
 
 func _on_avatar_loaded(user_id: int, avatar_size: int, buffer: PackedByteArray) -> void:

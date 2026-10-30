@@ -87,7 +87,9 @@ func _maybe_play_ai() -> void:
 func _start_online() -> void:
 	hud.text = "Connexion au serveur %s:%d…" % [online_host, online_port]
 	_client = NetClient.new()
-	_client.connected.connect(func() -> void: _client.send(Protocol.hello()))
+	_client.connected.connect(func() -> void:
+		SteamService.request_server_ticket(func(ticket: String) -> void:
+			_client.send(Protocol.hello(ticket, SteamService.claimed_steam_id()))))
 	_client.disconnected.connect(_on_disconnected)
 	_client.message_received.connect(_on_server_message)
 	var err := _client.connect_to(online_host, online_port)
