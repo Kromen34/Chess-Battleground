@@ -9,6 +9,8 @@ extends Node3D
 
 const MENU_SCENE := "res://scenes/main_menu.tscn"
 const MainMenu := preload("res://src/ui/main_menu.gd")
+const PaintStudio := preload("res://src/ui/paint_studio.gd")
+const PAINT_SCENE := "res://scenes/paint_studio.tscn"
 const PANEL_WIDTH := 300.0
 const LOCKED_COLOR := Color(1, 1, 1, 0.38)
 
@@ -30,6 +32,7 @@ var _total_label: Label
 var _name_label: Label
 var _owned_label: Label
 var _status_label: Label
+var _paint_button: Button
 
 
 func _ready() -> void:
@@ -41,6 +44,7 @@ func _ready() -> void:
 	_silhouette.albedo_color = Color(0.2, 0.2, 0.22)
 	_silhouette.roughness = 0.9
 	_build_ui()
+	_select_card(PaintStudio.card_id)
 	_refresh_lists()
 	_connect()
 
@@ -112,6 +116,15 @@ func _count_of(card: CardDef) -> int:
 	return _collection.count_of(card.id) if _collection != null else 0
 
 
+## Se place sur la carte [id] (retour de l'atelier de peinture).
+func _select_card(id: StringName) -> void:
+	var card := _catalog.get_card(id)
+	if card == null:
+		return
+	_family = maxi(0, _families.find(card.family))
+	_index = maxi(0, _catalog.cards_of(card.family).find(card))
+
+
 ## Remplit le panneau en gardant la famille et la carte affichées.
 func _refresh_lists() -> void:
 	var owned := 0
@@ -163,8 +176,15 @@ func _show(i: int) -> void:
 		_owned_label.text = "Possédée : %d exemplaire%s" % [n, "s" if n > 1 else ""]
 	else:
 		_owned_label.text = "Pas encore obtenue"
-	if not _stage.show_model(card.model_path, null if n > 0 else _silhouette):
+	var shown := _stage.show_model(card.model_path, null if n > 0 else _silhouette)
+	if not shown:
 		_owned_label.text += " · modèle absent sur ce PC"
+	elif n > 0 and FigurinePaint.has_save(card.id):
+		var paint := FigurinePaint.attach(_stage.model())
+		paint.load_saved(card.id)
+		paint.flush()
+	# Seules les figurines possédées se peignent.
+	_paint_button.visible = n > 0 and shown
 
 
 func _build_ui() -> void:
@@ -179,6 +199,16 @@ func _build_ui() -> void:
 	_name_label = _label(top, 34)
 	_owned_label = _label(top, 20)
 	_owned_label.modulate = Color(1, 1, 1, 0.75)
+	_paint_button = Button.new()
+	_paint_button.text = "Peindre cette figurine"
+	_paint_button.add_theme_font_size_override("font_size", 18)
+	_paint_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_paint_button.focus_mode = Control.FOCUS_NONE
+	_paint_button.visible = false
+	_paint_button.pressed.connect(func() -> void:
+		PaintStudio.card_id = _cards[_index].id
+		get_tree().change_scene_to_file(PAINT_SCENE))
+	top.add_child(_paint_button)
 
 	# Messages de connexion, au-dessus de l'aide en bas de l'écran.
 	_status_label = Label.new()
