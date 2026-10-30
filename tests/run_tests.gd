@@ -19,9 +19,15 @@ func _init() -> void:
 	for f in files:
 		if not (f.begins_with("test_") and f.ends_with(".gd")):
 			continue
-		var script: GDScript = load(TEST_DIR + f)
-		var suite: TestCase = script.new()
+		var script := load(TEST_DIR + f) as GDScript
 		print("== %s" % f)
+		# Script qui ne compile pas : on le compte en échec au lieu de planter le runner,
+		# qui ne quitterait alors jamais (le processus resterait bloqué).
+		if script == null or not script.can_instantiate():
+			failures += 1
+			print("  FAIL script illisible (erreur de compilation, voir plus haut)")
+			continue
+		var suite: TestCase = script.new()
 		for m in script.get_script_method_list():
 			var name: String = m["name"]
 			if not name.begins_with("test_"):
